@@ -2,7 +2,9 @@
 .env
 *.key
 
-# Keep output/ and referrals/ — all synthetic demo data, no real patients
+# Runtime-generated data files — not needed in repo
+output/episode-*.md
+output/fields-*.json
 
 # Python
 __pycache__/
