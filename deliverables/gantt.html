@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Implementation Gantt</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: Calibri, Arial, sans-serif; background: #1a2a4a; }
+
+/* ── Nav bar ── */
+.nav { display: flex; align-items: center; gap: 6px; background: #1a2a4a; padding: 8px 16px; height: 48px; border-bottom: 2px solid #2e4a7a; flex-shrink: 0; }
+.nav-title { font-size: 11pt; font-weight: 700; color: #7fafd4; margin-right: 10px; white-space: nowrap; }
+.tab-btn { padding: 5px 14px; font-size: 9pt; font-weight: 600; border: 1.5px solid #3a5a8a; border-radius: 4px; background: transparent; color: #a0b8d0; cursor: pointer; transition: all .15s; }
+.tab-btn:hover { background: #2a3a5a; color: #fff; }
+.tab-btn.active { background: #d46a0a; border-color: #d46a0a; color: #fff; }
+
+/* ── Views ── */
+.view { display: none; height: calc(100vh - 48px); flex-direction: column; }
+.view.active { display: flex; }
+
+/* ── Header ── */
+.s-hdr { background: #1a2a4a; padding: 10px 20px 8px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.s-hdr-left { flex: 1; }
+.s-tag  { font-size: 7pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #7fafd4; margin-bottom: 2px; }
+.s-hdr h1 { font-size: 15pt; font-weight: bold; color: white; line-height: 1.1; margin-bottom: 3px; }
+.s-sub  { font-size: 7.5pt; color: #a0b8d0; }
+.s-hdr-right { text-align: right; flex-shrink: 0; }
+.s-legend { display: flex; gap: 16px; justify-content: flex-end; margin-bottom: 5px; font-size: 8.5pt; color: #d0dff0; align-items: center; }
+.s-legend .li { display: flex; align-items: center; gap: 4px; }
+.s-legend .lb { display: inline-block; width: 20px; height: 11px; border-radius: 2px; }
+.s-pct { font-size: 13pt; font-weight: bold; color: #ffffff; }
+
+/* ── Body ── */
+.s-body { flex: 1; overflow: auto; min-height: 0; background: #f0f2f5; padding: 8px 14px 10px; }
+
+/* ── Gantt table ── */
+.gt { border-collapse: collapse; table-layout: fixed; width: 100%; min-width: 800px; }
+.gt .g-fn-lbl { width: 138px; padding: 3px 5px 3px 3px; vertical-align: middle; background: white; border-right: 1px solid #d0d8e8; }
+.g-fn-name { display: block; font-size: 7.5pt; font-weight: 600; color: #1a1a2e; }
+.g-fn-fte  { display: block; font-size: 6pt; color: #888; margin-top: 1px; }
+.gt .g-yr-row td  { font-size: 8pt; font-weight: bold; color: white; background: #1a2a4a; padding: 4px 7px; border-right: 1px solid #2e4a7a; }
+.gt .g-m-row td   { font-size: 5pt; text-align: center; color: #1a2a3a; padding: 2px 0 2px; background: #f8f9fb; border-bottom: 1px solid #ddd; border-right: 1px solid #efefef; }
+.gt .g-track-row td { font-size: 7pt; font-weight: bold; color: #445; text-transform: uppercase; letter-spacing: .4px; padding: 4px 0 4px 5px; background: #e8ecf2; border-top: 2px solid #b8c4d6; border-bottom: 1px solid #d0d8e4; }
+.gt .g-data-row td  { border-bottom: 1px solid #eaeef4; border-right: 1px solid #eeeeee; padding: 0; text-align: center; vertical-align: middle; font-size: 7pt; font-weight: bold; }
+.gt .g-data-row td.g-empty  { background: #fafbfc; }
+.gt .g-data-row td.g-design { background: #cdd6e8; color: #3a4a6a; }
+.gt .g-data-row td.g-build  { background: #E5950A; color: #7a3200; }
+.gt .g-port-hdr td { font-size: 7pt; font-weight: bold; color: #445; text-transform: uppercase; letter-spacing: .4px; padding: 4px 0 4px 5px; background: #dde3ed; border-top: 3px solid #1E8449; border-bottom: 1px solid #c0c8d8; }
+.gt .g-port-row td { border-top: 2px solid #1E8449; border-bottom: 2px solid #c0c8d8; border-right: 1px solid #ccd4df; padding: 0; vertical-align: middle; }
+.gt .g-port-row .g-fn-lbl { background: #1a2a4a; padding: 3px 5px; }
+.gt .g-port-row .g-fn-name { color: white; font-size: 7.5pt; }
+.gt .g-port-row .g-fn-fte  { color: #E5950A; font-size: 7pt; }
+.gt td.m12 { border-right: 2.5px solid #888 !important; }
+.gt td.m24 { border-right: 2.5px solid #d46a0a !important; }
+.gt td.m36 { border-right: 2.5px solid #1E8449 !important; }
+.gt td.m48 { border-right: 2.5px solid #2E86C1 !important; }
+.gt td.m60 { border-right: 2.5px solid #7D3C98 !important; }
+.gt.lines-1 .g-data-row td { height: 28px; }
+.gt.lines-2 .g-data-row td { height: 36px; }
+.gt.lines-3 .g-data-row td { height: 42px; }
+.gt.lines-1 .g-port-row td { height: 32px; }
+.gt.lines-2 .g-port-row td { height: 40px; }
+.gt.lines-3 .g-port-row td { height: 46px; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-title">Implementation Gantt</div>
+  <button class="tab-btn" onclick="show(0)">5Y · 3-Line</button>
+  <button class="tab-btn" onclick="show(1)">5Y · 2-Line</button>
+  <button class="tab-btn" onclick="show(2)">5Y · 1-Line</button>
+  <button class="tab-btn" onclick="show(3)">3Y · 3-Line</button>
+  <button class="tab-btn" onclick="show(4)">3Y · 2-Line</button>
+  <button class="tab-btn active" onclick="show(5)">3Y · 1-Line</button>
+</div>
+
+<div id="v0" class="view"></div>
+<div id="v1" class="view"></div>
+<div id="v2" class="view"></div>
+<div id="v3" class="view"></div>
+<div id="v4" class="view"></div>
+<div id="v5" class="view active"></div>
+
+<script>
+function mixRgb(hex,f){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `rgb(${Math.round(r*f+255*(1-f))},${Math.round(g*f+255*(1-f))},${Math.round(b*f+255*(1-f))})`;}
+function rampBg(hex,vol){return mixRgb(hex,0.10+Math.min(vol/76,1)*0.55);}
+function isDark(rgb){const m=rgb.match(/\d+/g);return(0.299*+m[0]+0.587*+m[1]+0.114*+m[2])/255>0.62;}
+
+const TOTAL_FTE=973;
+const fns=[
+  {track:'A',name:'1a — Intake · Data',       fte:160,gl:7, v:[38,55,65,73,75],h:[65,36,31,25,20],color:'#2E86C1'},
+  {track:'A',name:'1b — Intake · Voice',       fte:74, gl:8, v:[38,55,65,73,75],h:[65,36,31,23,20],color:'#5BA3D9'},
+  {track:'A',name:'3 — Scheduling · Voice W1', fte:83, gl:12,v:[38,45,53,60,65],h:[54,45,40,32,25],color:'#7D3C98'},
+  {track:'A',name:'↳ Wave 2',                  fte:83, gl:12,v:[38,45,53,60,65],h:[54,45,40,32,25],color:'#9B59B6'},
+  {track:'B',name:'4 — Cash Apps · Data',      fte:231,gl:7, v:[41,60,66,74,76],h:[55,37,29,24,19],color:'#1E8449'},
+  {track:'B',name:'↳ Voice PHP',               fte:32, gl:12,v:[30,50,55,55,55],h:[55,30,20,20,20],color:'#27AE60'},
+  {track:'B',name:'↳ Voice Spanish',           fte:27, gl:12,v:[32,55,60,60,60],h:[55,40,25,25,25],color:'#58D68D'},
+  {track:'B',name:'2 — Doc & Records · Data',  fte:113,gl:9, v:[43,63,68,73,76],h:[57,40,30,23,18],color:'#1A9A7E'},
+  {track:'B',name:'↳ Voice',                   fte:28, gl:10,v:[28,45,55,58,58],h:[68,40,30,25,25],color:'#48C9B0'},
+  {track:'B',name:'7 — Collections',           fte:34, gl:12,v:[18,18,53,55,60],h:[55,55,50,45,40],color:'#E67E22'},
+  {track:'C',name:'5 — Program Support',       fte:62, gl:9, v:[38,48,60,65,68],h:[60,45,45,42,40],color:'#D4820A'},
+  {track:'C',name:'6 — Billing & Invoice',     fte:46, gl:7, v:[47,55,67,69,69],h:[55,45,35,35,35],color:'#C0392B'},
+];
+const trackLabels={
+  A:'Track A · Front-End Operations · Intake Data (M7) · Intake Voice (M8) · Scheduling W1 + W2 (M12)',
+  B:'Track B · Financial Processing · Cash Apps Data (M7) + PHP (M12) + Spanish (M12) · Doc & Records Data (M9) + Voice (M10) · Collections (M12)',
+  C:'Track C · Back-Office Operations · Program Support (M9) · Billing & Invoice (M7)',
+};
+const YM_CLR={12:'#888',24:'#d46a0a',36:'#1E8449',48:'#2E86C1',60:'#7D3C98'};
+const YR_LBL={12:'Yr1',24:'Yr2',36:'Yr3',48:'Yr4',60:'Yr5'};
+const PORT_BG=['#1a2a4a','#5c2800','#0d3d1a','#0d2a4a','#2a1a4a'];
+
+function portEff(m,maxYi){return fns.reduce((s,fn)=>{if(m<fn.gl)return s;const yi=Math.min(Math.floor((m-fn.gl)/12),maxYi);return s+fn.fte*fn.v[yi]*(100-fn.h[yi])/10000;},0)/TOTAL_FTE;}
+function portEffAvg(s,e,maxYi){let sum=0;for(let m=s;m<=e;m++)sum+=portEff(m,maxYi);return sum/(e-s+1);}
+function portAutoFte(m,maxYi){return Math.round(fns.reduce((s,fn)=>{if(m<fn.gl)return s;const yi=Math.min(Math.floor((m-fn.gl)/12),maxYi);return s+fn.fte*fn.v[yi]*(100-fn.h[yi])/10000;},0));}
+
+function buildView(id,years,lines){
+  const MONTHS=years*12, maxYi=years-1;
+  const el=document.getElementById(id);
+  el.innerHTML=`
+  <div class="s-hdr">
+    <div class="s-hdr-left">
+      <div class="s-tag">Implementation Roadmap &nbsp;·&nbsp; ${years===3?'36':'60'}-Month View</div>
+      <h1>Implementation Gantt &mdash; ${years===3?'36':'60'} Months</h1>
+      <div class="s-sub">12 function / wave rows &nbsp;·&nbsp; 3 parallel tracks &nbsp;·&nbsp; 973 FTE &nbsp;·&nbsp;
+        <strong style="color:#fff">4-month build + test + dual-run per go-live</strong>
+        &nbsp;·&nbsp; Go-live floor: M7 &nbsp;·&nbsp; Vol% = AI-handled volume target &nbsp;·&nbsp; Net Eff = Vol% &times; (1&minus;HITL%)</div>
+    </div>
+    <div class="s-hdr-right">
+      <div class="s-legend">
+        <div class="li"><span class="lb" style="background:#cdd6e8;border:1px solid #7a90b0;"></span><strong>DES</strong> &mdash; Design (2 months: SOP mapping, rules definition)</div>
+        <div class="li"><span class="lb" style="background:#E5950A;"></span><strong>PREP</strong> &mdash; Preparation (4 months: Build · Test · Dual-Run)</div>
+      </div>
+      <div class="s-pct">%NE = Net Efficiency = Vol% &times; (1&minus;HITL%) &mdash; % of total volume fully automated &nbsp;&middot;&nbsp; Values are cumulative year-on-year</div>
+    </div>
+  </div>
+  <div class="s-body"><table class="gt lines-${lines}" id="tbl-${id}"></table></div>`;
+
+  let h='';
+
+  // year header
+  h+='<tr class="g-yr-row"><td class="g-fn-lbl" style="background:#1a2a4a;border-right:none;"></td>';
+  for(let yr=1;yr<=years;yr++){
+    const sep=yr>1?'border-left:3px solid #4a70b0;':'';
+    h+=`<td colspan="12" style="padding-left:9px;${sep}">Year ${yr} &nbsp; M${(yr-1)*12+1}–M${yr*12}</td>`;
+  }
+  h+='</tr>';
+
+  // month row
+  h+='<tr class="g-m-row"><td class="g-fn-lbl"></td>';
+  for(let m=1;m<=MONTHS;m++){
+    const clr=YM_CLR[m];
+    const cls=clr?` class="m${m}"`:'';
+    const st=clr?`border-left:3px solid ${clr};font-weight:bold;color:${clr};background:white;`:(m%12===1&&m>1?'border-left:2px solid #c0ccd8;':'');
+    h+=`<td${cls} style="${st}">${m}</td>`;
+  }
+  h+='</tr>';
+
+  // data rows
+  let lastTrack=null;
+  for(const fn of fns){
+    if(fn.track!==lastTrack){
+      lastTrack=fn.track;
+      h+=`<tr class="g-track-row"><td colspan="${MONTHS+1}">${trackLabels[fn.track]}</td></tr>`;
+    }
+    h+='<tr class="g-data-row">';
+    const isInd=fn.name.startsWith('↳');
+    h+=`<td class="g-fn-lbl" style="${isInd?'padding-left:15px':''}"><span class="g-fn-name" style="${isInd?'color:#444;':''}">${fn.name}</span><span class="g-fn-fte">${fn.fte} FTE</span></td>`;
+
+    const desS=fn.gl-6,desE=fn.gl-5,bldS=fn.gl-4,bldE=fn.gl-1;
+    for(let m=1;m<=MONTHS;m++){
+      const mCls=YM_CLR[m]?` m${m}`:'';
+      let cls='',st='',content='';
+      if(m<desS){
+        cls='g-empty';
+      } else if(m<=desE){
+        cls='g-design';
+        if(m===desS)content=`<span style="font-size:5pt;font-weight:bold;color:#3a4a6a">DES</span>`;
+      } else if(m<=bldE){
+        cls='g-build';
+        if(m===bldS)content=`<span style="font-size:5pt;font-weight:bold;color:#7a3200">PREP</span>`;
+      } else {
+        // Anniversary ramp: Y1 = full target at go-live; Y2+ = 3-month 40% transition → full
+        const live=m-fn.gl;
+        const yrP=Math.floor(live/12);
+        const mInP=live%12;
+        const fnMax=fn.v.length-1;
+        let colorVol;
+        if(yrP===0){
+          colorVol=fn.v[0];
+        } else {
+          const yCur=Math.min(yrP,fnMax);
+          const yPrv=Math.min(yrP-1,fnMax);
+          colorVol=mInP<3
+            ? Math.round(fn.v[yPrv]+(fn.v[yCur]-fn.v[yPrv])*0.4)
+            : fn.v[yCur];
+        }
+        const bg=rampBg(fn.color,colorVol);
+        const tc=isDark(bg)?'rgba(0,0,0,0.72)':'rgba(255,255,255,0.92)';
+        st=`background:${bg};`;
+        // Label at each anniversary: go-live month, then fn.gl+12, fn.gl+24, …
+        const labelM=fn.gl+yrP*12;
+        if(m===labelM&&m<=MONTHS){
+          const k=Math.min(yrP,fnMax);
+          const vol=fn.v[k],hitl=fn.h[k],ne=Math.round(vol*(100-hitl)/100);
+          if(lines===1)
+            content=`<span style="font-size:6pt;font-weight:bold;color:${tc};white-space:nowrap">${ne}%NE</span>`;
+          else if(lines===2)
+            content=`<span style="font-size:5.5pt;font-weight:bold;color:${tc};line-height:1.35;display:inline-block;text-align:center">${vol}%V<br>${ne}%NE</span>`;
+          else
+            content=`<span style="font-size:5pt;font-weight:bold;color:${tc};line-height:1.3;display:inline-block;text-align:center">${vol}%V<br>${hitl}%H<br><em>${ne}%NE</em></span>`;
+        }
+      }
+      h+=`<td class="${cls}${mCls}" style="${st}">${content}</td>`;
+    }
+    h+='</tr>';
+  }
+
+  // portfolio summary
+  h+=`<tr class="g-port-hdr"><td colspan="${MONTHS+1}">Portfolio Summary · Aggregate Net Efficiency Across All 12 Rows · HITL 54–68% Y1 → 18–45% Y3 post go-live · All 12 functions live by M12 · Ramp accelerates through Y2–Y3</td></tr>`;
+  h+='<tr class="g-port-row">';
+  h+=`<td class="g-fn-lbl"><span class="g-fn-name">Net Eff / Vol%</span><span class="g-fn-fte">973 FTE</span></td>`;
+  for(let yr=1;yr<=years;yr++){
+    const endM=yr*12,startM=(yr-1)*12+1;
+    const ym=YM_CLR[endM];
+    const effEnd=portEff(endM,maxYi),effAvg=portEffAvg(startM,endM,maxYi);
+    const autoFte=portAutoFte(endM,maxYi),humanFte=TOTAL_FTE-autoFte;
+    const sep=yr>1?`border-left:3px solid ${ym};`:'';
+    h+=`<td colspan="12" style="background:${PORT_BG[yr-1]};${sep}padding:3px 8px;vertical-align:middle;">
+      <span style="font-size:7.5pt;font-weight:bold;color:rgba(255,255,255,0.95);white-space:nowrap;display:block;">${YR_LBL[endM]} · Net Eff ~${(effEnd*100).toFixed(0)}% · Avg ~${(effAvg*100).toFixed(0)}%</span>
+      <span style="font-size:6.5pt;color:rgba(255,255,255,0.70);white-space:nowrap;">Auto: ${autoFte} FTE &nbsp;·&nbsp; Human: ${humanFte} FTE</span>
+    </td>`;
+  }
+  h+='</tr>';
+
+  document.getElementById(`tbl-${id}`).innerHTML=h;
+}
+
+const VIEWS=[[0,'v0',5,3],[1,'v1',5,2],[2,'v2',5,1],[3,'v3',3,3],[4,'v4',3,2],[5,'v5',3,1]];
+const built=new Set();
+function show(idx){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  const[,id,years,lines]=VIEWS[idx];
+  document.getElementById(id).classList.add('active');
+  if(!built.has(idx)){buildView(id,years,lines);built.add(idx);}
+}
+show(5);
+</script>
+</body>
+</html>
