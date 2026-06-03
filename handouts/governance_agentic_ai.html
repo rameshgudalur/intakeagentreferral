@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Governance of Agentic AI Systems — RFP Response</title>
+<style>
+  @page { size: Letter; margin: 16mm 18mm 18mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; color: #1f2937; font-size: 10.6px; line-height: 1.58; background: #fff; }
+  .doc { max-width: 820px; margin: 0 auto; padding: 26px 30px 40px; }
+
+  /* letterhead */
+  .lh { display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 12px; margin-bottom: 6px; }
+  .lh-brand { display: flex; align-items: center; gap: 11px; }
+  .lh-logo { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; }
+  .lh-name { font-size: 13px; font-weight: 800; color: #1e3a5f; letter-spacing: -.01em; }
+  .lh-name span { display: block; font-size: 9px; font-weight: 600; color: #94a3b8; letter-spacing: .05em; text-transform: uppercase; margin-top: 1px; }
+  .lh-meta { text-align: right; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #b91c1c; }
+  .lh-meta span { display: block; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+
+  .eyebrow { font-size: 9.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #2563eb; margin-top: 16px; }
+  h1 { font-size: 23px; font-weight: 800; color: #0f172a; letter-spacing: -.02em; line-height: 1.15; margin: 3px 0 4px; }
+  .dek { font-size: 12px; color: #64748b; margin-bottom: 12px; }
+
+  .standards { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .std { font-size: 9px; font-weight: 700; letter-spacing: .03em; color: #1e3a5f; background: #eef2f7; border: 1px solid #d6deea; border-radius: 99px; padding: 3px 10px; }
+
+  .intro { font-size: 11px; line-height: 1.62; color: #374151; margin-bottom: 16px; }
+  .intro b { color: #0f172a; }
+
+  .sec { margin-bottom: 12px; break-inside: avoid; page-break-inside: avoid; }
+  .sec h2 { font-size: 11.5px; font-weight: 800; color: #1e3a5f; margin-bottom: 3px; display: flex; align-items: baseline; gap: 8px; }
+  .sec h2 .n { color: #2563eb; font-weight: 800; }
+  .sec p { font-size: 10.5px; line-height: 1.58; color: #374151; }
+  .sec p b { color: #0f172a; }
+
+  .value { margin-top: 14px; border-left: 4px solid #1e3a5f; background: #f8fafc; border-radius: 0 8px 8px 0; padding: 14px 18px; break-inside: avoid; }
+  .value h2 { font-size: 11.5px; font-weight: 800; color: #1e3a5f; margin-bottom: 4px; }
+  .value p { font-size: 10.5px; line-height: 1.6; color: #374151; }
+  .value p b { color: #0f172a; }
+
+  .foot { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 8px; font-size: 8.5px; color: #94a3b8; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="lh">
+    <div class="lh-brand">
+      <div class="lh-logo">▣</div>
+      <div class="lh-name">[ Company Name ]<span>Agentic AI for Healthcare</span></div>
+    </div>
+    <div class="lh-meta">RFP Response<span>Confidential</span></div>
+  </div>
+
+  <div class="eyebrow">Response to: Agentic AI Governance</div>
+  <h1>Governance of Agentic AI Systems</h1>
+  <div class="dek">How we design, implement, and operate autonomous agents that are safe, secure, and within organizational, ethical, and regulatory boundaries &mdash; while delivering value.</div>
+
+  <div class="standards">
+    <span class="std">NIST AI RMF</span>
+    <span class="std">ISO/IEC 42001</span>
+    <span class="std">HIPAA</span>
+    <span class="std">HITRUST</span>
+    <span class="std">SOC 2 Type II</span>
+    <span class="std">EU AI Act (risk-tiering)</span>
+  </div>
+
+  <p class="intro">For autonomous agents operating in an enterprise healthcare environment, governance cannot be a policy document that sits <em>beside</em> the system &mdash; it must be the operating fabric the system runs <em>on</em>. Our governing principle is <b>bounded autonomy</b>: an agent may act independently only within boundaries that are explicitly defined, <b>technically enforced at runtime</b>, continuously monitored, and fully auditable &mdash; and a <b>named, accountable human owns every decision that carries clinical, financial, or regulatory consequence</b>. Our framework is built to, and independently assessed against, recognized standards &mdash; NIST AI RMF, ISO/IEC 42001, HIPAA, HITRUST, and SOC 2 Type II &mdash; and risk-tiers agent use cases consistent with the EU AI Act. The objective is not to constrain AI in order to manage risk; it is to make the <em>expansion</em> of autonomy a controlled, evidence-based decision.</p>
+
+  <div class="sec">
+    <h2><span class="n">1</span> Governance operating model &amp; accountability</h2>
+    <p>An <b>AI Governance Council</b> &mdash; spanning clinical, privacy/compliance, security, legal, data, and business ownership &mdash; sets policy and risk appetite and authorizes every production deployment, operating on a three-lines-of-defense model. Each agent is entered in a central <b>agent registry</b> capturing its purpose, scope, owner, risk tier, data access, dependencies, and approval history. Every agent carries a clear <b>RACI</b> (business owner, agent-performance manager, security, compliance) and progresses through <b>stage-gate approvals</b> before it touches production traffic.</p>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">2</span> Bounded autonomy &mdash; defining and constraining behavior</h2>
+    <p>Each agent is granted an explicit, <b>least-privilege operating scope</b>: the actions it may take, the systems it may reach, the data it may see, and the thresholds at which it must hand off. These constraints are enforced as <b>policy-as-code guardrails at runtime</b> &mdash; action allow-lists, input/output filtering, rate and spend limits &mdash; not merely described in a prompt. <b>Consequential actions require human approval gates</b>, and autonomy is <b>tiered by risk</b>: low-risk, reversible actions run unattended, while high-impact or irreversible actions are gated to a human. Agents act under <b>scoped, revocable non-human identities</b> &mdash; never shared human credentials.</p>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">3</span> Safety &amp; reliability</h2>
+    <p>Agents are engineered to <b>fail safe</b>. Layered controls combine <b>uncertainty/confidence gating</b> (the agent escalates rather than guesses), grounding and validation against authoritative sources, and deterministic checks for anything that must be exact. Before production, every agent is validated through <b>scenario-based evaluations and adversarial red-teaming</b> &mdash; including prompt-injection and tool-misuse testing. At runtime, <b>circuit breakers, rate limits, and an instant kill-switch</b> allow an agent to be suspended immediately. The default behavior under ambiguity is always to stop and route to a qualified human.</p>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">4</span> Security &amp; data protection</h2>
+    <p>Agents deploy <b>within the client&rsquo;s security perimeter and data-residency posture</b>; PHI is handled under existing HIPAA controls, BAAs, encryption in transit and at rest, and least-privilege access &mdash; adding <b>no new uncontrolled data egress</b>. Our threat model explicitly addresses <b>agent-specific risks</b> &mdash; prompt injection, data exfiltration through tools, and excessive agency &mdash; and aligns to HITRUST and SOC 2. Secrets and credentials are vaulted; every agent action is scoped, logged, and revocable.</p>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">5</span> Regulatory, ethical &amp; responsible AI</h2>
+    <p>Use cases are <b>risk-classified</b>, and controls scale with risk. We operationalize responsible-AI principles rather than asserting them: <b>transparency and explainability</b> (every decision and action is logged with its rationale and the rule or source that drove it), <b>fairness and bias monitoring</b> across populations, <b>human oversight and dignity</b> (clinical and other consequential judgments remain human-owned), and <b>data minimization and purpose limitation</b>. Clinical-safety and privacy reviews are built into the deployment gate, and we maintain alignment with HIPAA, applicable state and federal requirements, FDA SaMD considerations where relevant, and emerging AI regulation.</p>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">6</span> Observability, assurance &amp; lifecycle</h2>
+    <p>We maintain <b>continuous telemetry</b> on every agent &mdash; accuracy, exception/override rate, latency, cost, and behavioral drift &mdash; backed by an <b>immutable, timestamped, end-to-end audit trail</b> of agent reasoning and actions, available to compliance on demand as a complete record rather than a sample. <b>Change control is absolute</b>: every change to a policy, rule, prompt, model, or tool is versioned, regression-tested, approved, and logged &mdash; nothing reaches production without sign-off. Incident management, periodic re-certification, retraining governance, and clean decommissioning close the lifecycle. A <b>rising override rate is treated as a governance signal</b> that automatically triggers review.</p>
+  </div>
+
+  <div class="value">
+    <h2>Governance as an enabler of value &mdash; not a brake</h2>
+    <p>Designed this way, governance is what <em>allows</em> us to move fast and broaden autonomy responsibly. Because boundaries are explicit and enforced, because every action is observable and reversible, and because autonomy is tiered to evidence, we can <b>safely widen what an agent does as it earns trust</b> &mdash; capturing more value over time without re-opening the risk question at every step. The same controls that keep our agents safe, secure, and compliant are precisely what make it responsible to let them do more.</p>
+  </div>
+
+  <div class="foot">
+    <span>&copy; [ Company Name ] &mdash; Confidential &middot; Prepared in response to RFP</span>
+    <span>Governance of Agentic AI Systems</span>
+  </div>
+
+</div>
+</body>
+</html>
