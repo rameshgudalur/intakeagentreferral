@@ -1381,10 +1381,14 @@ function goStep(n) {
 
 // ── INLINE ESCALATION REVIEW ──────────────────────────────────────────────────
 function loadEscalationReview() {
+  // Only show an escalation that belongs to THIS episode — never a different
+  // patient's pending item from the global queue.
+  const thisClaim = "{{ claim }}";
   fetch('/api/escalations')
     .then(r => r.json())
     .then(queue => {
-      const pending = queue.filter(e => e.status === 'pending');
+      const pending = queue.filter(e => e.status === 'pending'
+        && (e.claim_number === thisClaim || e.claim === thisClaim));
       const panel = document.getElementById('esc-review-panel');
       const card  = document.getElementById('esc-review-card');
       if (!pending.length) {
