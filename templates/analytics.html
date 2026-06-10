@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics & Insights — Coastal DME</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh}
+  .top-nav{position:fixed;top:0;left:0;right:0;height:54px;background:#1e3a5f;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+  .nav-brand{display:flex;align-items:center;gap:10px;color:#fff;font-size:15px;font-weight:700;text-decoration:none}
+  .nav-icon{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .nav-back{color:rgba(255,255,255,.7);font-size:13px;text-decoration:none;font-weight:600}
+  .page{max-width:1040px;margin:0 auto;padding:78px 24px 48px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:99px;background:rgba(34,197,94,.1);color:#16a34a;border:1px solid rgba(34,197,94,.25);margin-bottom:10px}
+  h1{font-size:clamp(20px,2.6vw,30px);font-weight:800;color:#0f172a;letter-spacing:-.02em}
+  .sub{font-size:13px;color:#64748b;margin:4px 0 20px}
+  .seclabel{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin:22px 0 12px;display:flex;align-items:center;gap:10px}
+  .seclabel::after{content:'';flex:1;height:1px;background:#e2e8f0}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .kpi{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;border-top:3px solid #22c55e}
+  .kpi.blue{border-top-color:#3b82f6}.kpi.amber{border-top-color:#f59e0b}.kpi.purple{border-top-color:#8b5cf6}.kpi.navy{border-top-color:#1e3a5f}
+  .kpi .l{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8}
+  .kpi .v{font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-.03em;margin-top:4px;line-height:1}
+  .kpi .u{font-size:12px;color:#64748b;margin-top:4px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px}
+  .card h3{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:12px}
+  .bar{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .bar .bl{font-size:12px;font-weight:700;width:110px;flex-shrink:0;color:#334155}
+  .bar-track{flex:1;height:16px;background:#f1f5f9;border-radius:8px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:8px;background:#3b82f6}
+  .bar .bn{font-size:12px;font-weight:800;color:#0f172a;width:30px;text-align:right}
+  .f-VALIDATED{background:#22c55e}.f-FLAGGED{background:#f59e0b}.f-REJECTED{background:#f43f5e}.f-ESCALATED{background:#8b5cf6}
+  .f-HIGH{background:#22c55e}.f-MEDIUM{background:#f59e0b}.f-LOW{background:#f43f5e}.f-UNKNOWN{background:#94a3b8}
+  .foot{font-size:11px;color:#94a3b8;margin-top:16px;font-style:italic}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a class="nav-brand" href="/hub"><div class="nav-icon">&#x1F4CB;</div>Coastal DME</a>
+  <a class="nav-back" href="/hub">&larr; Back to Hub</a>
+</nav>
+<div class="page">
+  <div class="tag">Analytics & Insights</div>
+  <h1>Referral Analytics</h1>
+  <p class="sub">Cross-referral trends across every processed episode — for ops &amp; management (distinct from the live run dashboard).</p>
+
+  <div class="seclabel">Overview</div>
+  <div class="grid">
+    <div class="kpi blue"><div class="l">Episodes</div><div class="v" id="total">—</div><div class="u">distinct referrals</div></div>
+    <div class="kpi"><div class="l">Auto-route rate</div><div class="v" id="autoroute">—</div><div class="u">% complete, no touch</div></div>
+    <div class="kpi purple"><div class="l">Escalation rate</div><div class="v" id="escrate">—</div><div class="u">% to human</div></div>
+    <div class="kpi amber"><div class="l">Avg confidence</div><div class="v" id="conf">—</div><div class="u">% extraction</div></div>
+  </div>
+
+  <div class="seclabel">Distributions</div>
+  <div class="row">
+    <div class="card"><h3>Knowledge-graph outcomes</h3><div id="kg"></div></div>
+    <div class="card"><h3>Confidence tiers (autonomy)</h3><div id="tiers"></div></div>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <div class="card"><h3>By jurisdiction</h3><div id="juris"></div></div>
+    <div class="card"><h3>Most common gaps</h3><div id="gaps"></div></div>
+  </div>
+  <div class="foot">Aggregated from the per-episode records the agent already saves — the basis for continuous improvement (rising override/gap rates surface SOP fixes).</div>
+</div>
+<script>
+function bars(elId, obj, classPrefix){
+  const el=document.getElementById(elId);
+  const entries=Array.isArray(obj)?obj:Object.entries(obj);
+  const max=Math.max(1,...entries.map(e=>e[1]));
+  el.innerHTML=entries.map(([k,v])=>`<div class="bar"><span class="bl">${k}</span><div class="bar-track"><div class="bar-fill ${classPrefix?classPrefix+k:''}" style="width:${v/max*100}%"></div></div><span class="bn">${v}</span></div>`).join('') || '<div style="font-size:12px;color:#94a3b8">No data</div>';
+}
+async function load(){
+  const d=await (await fetch('/api/analytics')).json();
+  document.getElementById('total').textContent=d.total_episodes;
+  document.getElementById('autoroute').textContent=d.auto_route_rate+'%';
+  document.getElementById('escrate').textContent=d.escalation_rate+'%';
+  document.getElementById('conf').textContent=d.avg_confidence+'%';
+  bars('kg', d.kg_distribution, 'f-');
+  bars('tiers', d.tier_distribution, 'f-');
+  bars('juris', d.jurisdiction_distribution, '');
+  bars('gaps', d.top_gaps, '');
+}
+load();
+</script>
+</body>
+</html>

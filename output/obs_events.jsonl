@@ -1,0 +1,23 @@
+{"ts": "2026-06-10T15:39:05", "msg": "Demo fax triggered \u2014 processing demo_fax"}
+{"ts": "2026-06-10T15:39:05", "msg": "Reading demo_fax \u2014 3 docs"}
+{"ts": "2026-06-10T15:39:06", "msg": "demo_fax \u2014 4 pages read across 3 documents"}
+{"ts": "2026-06-10T15:39:06", "msg": "demo_fax \u2014 sending to LLM for extraction"}
+{"ts": "2026-06-10T15:39:23", "msg": "demo_fax \u2014 extracted: Michelle Tran | M47.816"}
+{"ts": "2026-06-10T15:39:23", "msg": "demo_fax \u2014 KG: FLAGGED \u00b7 3 rules \u00b7 0 confirmed"}
+{"ts": "2026-06-10T15:39:23", "msg": "demo_fax \u2014 ICD conflict: The referral form listed M54.5 (Low back pain) as the primar"}
+{"ts": "2026-06-10T15:39:23", "msg": "demo_fax \u2014 3 gaps: auth_ref, appt_window, transportation"}
+{"ts": "2026-06-10T15:39:23", "msg": "demo_fax \u2014 DONE in 18.5s | GAPS"}
+{"ts": "2026-06-10T15:39:31", "msg": "demo_fax \u2014 outreach email drafted"}
+{"ts": "2026-06-10T15:40:52", "msg": "Inbound fax rejected \u2014 invalid webhook signature"}
+{"ts": "2026-06-10T15:41:36", "msg": "Inbound fax rejected \u2014 invalid webhook signature"}
+{"ts": "2026-06-10T16:17:37", "msg": "Demo fax triggered \u2014 processing demo_fax"}
+{"ts": "2026-06-10T16:17:37", "msg": "Reading demo_fax \u2014 3 docs"}
+{"ts": "2026-06-10T16:17:37", "msg": "demo_fax \u2014 4 pages read across 3 documents"}
+{"ts": "2026-06-10T16:17:37", "msg": "demo_fax \u2014 sending to LLM for extraction"}
+{"ts": "2026-06-10T16:17:54", "msg": "demo_fax \u2014 extracted: Michelle Tran | M47.816"}
+{"ts": "2026-06-10T16:17:54", "msg": "demo_fax \u2014 jurisdiction CA (SLA 5d) \u00b7 confidence tier HIGH [autonomous]"}
+{"ts": "2026-06-10T16:17:54", "msg": "demo_fax \u2014 KG: FLAGGED \u00b7 3 rules \u00b7 0 confirmed"}
+{"ts": "2026-06-10T16:17:54", "msg": "demo_fax \u2014 ICD conflict: The referral form listed M54.5 (Low back pain) as the primar"}
+{"ts": "2026-06-10T16:17:54", "msg": "demo_fax \u2014 3 gaps: auth_ref, appt_window, transportation"}
+{"ts": "2026-06-10T16:17:54", "msg": "demo_fax \u2014 DONE in 17.1s | GAPS"}
+{"ts": "2026-06-10T16:18:00", "msg": "demo_fax \u2014 outreach email drafted"}

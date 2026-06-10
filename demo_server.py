@@ -140,7 +140,7 @@ def _update_queue_item(claim: str, **kwargs):
 
 
 # ── PROCESS ONE REFERRAL ──────────────────────────────────────────────────────
-def process_referral(folder: Path) -> dict:
+def process_referral(folder: Path, link: bool = False) -> dict:
     claim = folder.name
     t0 = time.time()
 
@@ -171,6 +171,59 @@ def process_referral(folder: Path) -> dict:
 
         _update_queue_item(claim, patient=patient, equipment=equipment)
         _log(f"{claim} — extracted: {patient} | {fields.get('icd_code', '—')}")
+
+        # ── Parking Lot 1: link a supplemental fax to an existing OPEN referral ──
+        # (only for inbound/uploaded faxes — the bulk showcase batch is untouched)
+        if link:
+            import referral_link
+            _ex = referral_link.find_open_episode(
+                OUTPUT_DIR, fields.get("claim_number"), fields.get("patient_name"),
+                fields.get("dob"), exclude_claim=claim)
+            if _ex:
+                _ex_claim = _ex["fields"].get("claim_number") or _ex["claim"]
+                _merged = referral_link.merge_fields(_ex["fields"], fields)
+                _merged_comp = check_completeness(_merged)
+                _closed = referral_link.resolved_gaps(_ex["completeness"], _merged_comp)
+                try:
+                    _doc = json.loads(Path(_ex["path"]).read_text(encoding="utf-8"))
+                    _doc["fields"] = _merged
+                    _doc["completeness"] = _merged_comp
+                    _doc.setdefault("linked_docs", []).append(claim)
+                    Path(_ex["path"]).write_text(json.dumps(_doc, indent=2), encoding="utf-8")
+                except Exception:
+                    pass
+                _newstatus = "routed" if _merged_comp["is_complete"] else "gaps"
+                with _lock:
+                    for _it in _state["queue"]:
+                        if (referral_link._norm(_it.get("claim_number")) == referral_link._norm(_ex_claim)
+                                and _it.get("claim") != claim):
+                            _it["status"] = _newstatus
+                            _it["gaps"] = len(_merged_comp["gaps"])
+                            _it["outreach"] = not _merged_comp["is_complete"]
+                            _it["substep"] = "↩ supplemental linked"
+                            break
+                _elapsed = round(time.time() - t0, 1)
+                _update_queue_item(
+                    claim, status="linked", patient=patient,
+                    equipment="↳ linked to " + str(_ex_claim),
+                    substep=("resolved: " + ", ".join(_closed)) if _closed else "supplemental",
+                    elapsed=_elapsed)
+                _done = "ROUTE-READY" if _merged_comp["is_complete"] else f"{len(_merged_comp['gaps'])} gaps remain"
+                _log(f"{claim} — LINKED to existing referral {_ex_claim} — resolved [{', '.join(_closed) if _closed else 'none'}] -> {_done}")
+                with _lock:
+                    _state["processed"] += 1
+                    _state["latencies"].append(_elapsed)
+                return {"claim": claim, "status": "linked", "linked_to": _ex_claim, "resolved": _closed}
+
+        # ── Parking Lot 4 + 9: jurisdiction SLA + confidence tier ─────────────
+        import policy
+        _juris = policy.assess_jurisdiction(fields)
+        _ctier = policy.confidence_tier(fields.get("confidence"))
+        fields["jurisdiction"] = _juris
+        fields["confidence_tier"] = _ctier
+        _update_queue_item(claim, jurisdiction=_juris["state"], sla_days=_juris["sla_days"],
+                           sla_priority=_juris["sla_priority"], conf_tier=_ctier["tier"])
+        _log(f"{claim} — jurisdiction {_juris['state']} (SLA {_juris['sla_days']}d) · confidence tier {_ctier['tier']} [{_ctier['autonomy']}]")
 
         # ── STEP 3: Knowledge Graph validation ────────────────────────────────
         _update_queue_item(claim, substep="KG validation...")
@@ -243,6 +296,7 @@ def process_referral(folder: Path) -> dict:
             claim,
             patient=patient,
             equipment=equipment,
+            claim_number=fields.get("claim_number", ""),
             status=status,
             priority=priority,
             priority_reason=priority_reason,
@@ -579,6 +633,110 @@ def api_training_grade():
     return jsonify(intake_training.grade(sub.get("case_id"), sub))
 
 
+# ── Parking Lot 3 — Audit trail / defensibility ───────────────────────────────
+def _build_audit(claim):
+    matches = sorted(OUTPUT_DIR.glob(f"fields-{claim}-*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not matches:
+        return None
+    p = matches[0]
+    data = json.loads(p.read_text(encoding="utf-8"))
+    fields = data.get("fields", {}) or {}
+    comp = data.get("completeness", {}) or {}
+    kg = fields.get("kg_validation", {}) or {}
+    return {
+        "claim": claim,
+        "generated_at": datetime.datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="seconds"),
+        "episode": {k: fields.get(k, "") for k in ("patient_name", "claim_number", "dob",
+                    "dme_item", "hcpcs", "icd_code", "icd_description", "insurance_carrier", "adjuster_name")},
+        "extraction": {"confidence": fields.get("confidence"),
+                       "fields_extracted": len([k for k, v in fields.items() if v and k != "kg_validation"])},
+        "policy": {"jurisdiction": fields.get("jurisdiction", {}), "confidence_tier": fields.get("confidence_tier", {})},
+        "icd_conflict": {"detected": bool(fields.get("icd_conflict")),
+                         "detail": fields.get("icd_conflict_detail", ""),
+                         "conflicts": data.get("icd_conflicts", []) or fields.get("icd_conflicts", [])},
+        "knowledge_graph": {
+            "status": kg.get("status"), "rules_checked": kg.get("rules_checked"),
+            "rules_fired": kg.get("rules_fired"), "source": kg.get("source"),
+            "source_url": kg.get("source_url"), "rule_set_date": kg.get("rule_set_date"),
+            "fired_rules": [{"rule_id": r.get("rule_id"), "action": r.get("action"),
+                             "message": r.get("message"), "source": r.get("source"),
+                             "confidence": r.get("confidence")} for r in kg.get("fired_rules", [])],
+        },
+        "completeness": {"is_complete": comp.get("is_complete"), "gaps": comp.get("gaps", {})},
+        "decision": {"escalated": bool(fields.get("escalate")), "outreach_drafted": bool(data.get("email_body"))},
+        "source_documents": data.get("pdf_files", []),
+        "linked_docs": data.get("linked_docs", []),
+    }
+
+@app.route("/api/audit/<claim>")
+def api_audit(claim):
+    rec = _build_audit(claim)
+    return (jsonify(rec), 200) if rec else (jsonify({"error": "Episode not found"}), 404)
+
+@app.route("/audit/<claim>")
+def audit_view(claim):
+    return render_template("audit.html", claim=claim)
+
+
+# ── Parking Lot 8 — Analytics & insights layer ────────────────────────────────
+@app.route("/api/analytics")
+def api_analytics():
+    import policy
+    from collections import Counter
+    latest = {}
+    for p in OUTPUT_DIR.glob("fields-*.json"):
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        f = data.get("fields", {}) or {}
+        key = f.get("claim_number") or p.name
+        mt = p.stat().st_mtime
+        if key not in latest or mt > latest[key][0]:
+            latest[key] = (mt, data)
+    eps = [d for _, d in latest.values()]
+    n = len(eps)
+    status_ct, kg_ct, tier_ct, juris_ct, gap_ct = Counter(), Counter(), Counter(), Counter(), Counter()
+    conf_sum = conf_n = escalated = complete = 0
+    for d in eps:
+        f = d.get("fields", {}) or {}
+        comp = d.get("completeness", {}) or {}
+        kg = f.get("kg_validation", {}) or {}
+        kg_ct[kg.get("status", "—")] += 1
+        if comp.get("is_complete"):
+            complete += 1; status_ct["routed"] += 1
+        else:
+            status_ct["gaps"] += 1
+        if f.get("escalate"):
+            escalated += 1
+        conf = f.get("confidence")
+        tier = (f.get("confidence_tier") or policy.confidence_tier(conf)).get("tier", "UNKNOWN")
+        tier_ct[tier] += 1
+        try:
+            conf_sum += float(conf); conf_n += 1
+        except (TypeError, ValueError):
+            pass
+        st = (f.get("jurisdiction") or policy.assess_jurisdiction(f)).get("state", "—")
+        juris_ct[st] += 1
+        for g in (comp.get("gaps", {}) or {}).keys():
+            gap_ct[g] += 1
+    return jsonify({
+        "total_episodes": n,
+        "complete": complete, "incomplete": n - complete, "escalated": escalated,
+        "auto_route_rate": round(complete / n * 100, 1) if n else 0,
+        "escalation_rate": round(escalated / n * 100, 1) if n else 0,
+        "avg_confidence": round(conf_sum / conf_n, 1) if conf_n else 0,
+        "kg_distribution": dict(kg_ct),
+        "tier_distribution": dict(tier_ct),
+        "jurisdiction_distribution": dict(juris_ct),
+        "top_gaps": gap_ct.most_common(8),
+    })
+
+@app.route("/panel/analytics")
+def panel_analytics():
+    return render_template("analytics.html")
+
+
 @app.route("/api/start", methods=["POST"])
 def api_start():
     with _lock:
@@ -729,7 +887,7 @@ def api_upload_fax():
 
     # Process in background
     t = threading.Thread(
-        target=process_referral, args=(folder,), daemon=False
+        target=process_referral, args=(folder,), kwargs={"link": True}, daemon=False
     )
     t.start()
     _log(f"New fax received — {claim} — processing now")
@@ -790,7 +948,7 @@ def api_inbound_fax():
         })
         _state["total"] = _state.get("total", 0) + 1
 
-    threading.Thread(target=process_referral, args=(folder,), daemon=False).start()
+    threading.Thread(target=process_referral, args=(folder,), kwargs={"link": True}, daemon=False).start()
     _log(f"Inbound fax received from {sender} — {claim} ({pages} pages) — processing now")
     return jsonify({"status": "processing", "claim": claim}), 200
 
@@ -828,7 +986,7 @@ def api_trigger_fax():
         })
 
     _log(f"Demo fax triggered — processing {claim}")
-    t = threading.Thread(target=process_referral, args=(folder,), daemon=False)
+    t = threading.Thread(target=process_referral, args=(folder,), kwargs={"link": True}, daemon=False)
     t.start()
 
     return jsonify({"status": "processing", "claim": claim})

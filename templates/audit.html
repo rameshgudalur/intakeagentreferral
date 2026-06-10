@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Trail — {{ claim }} | Coastal DME</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh}
+  .top-nav{position:fixed;top:0;left:0;right:0;height:54px;background:#1e3a5f;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+  .nav-brand{display:flex;align-items:center;gap:10px;color:#fff;font-size:15px;font-weight:700;text-decoration:none}
+  .nav-icon{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .nav-back{color:rgba(255,255,255,.7);font-size:13px;text-decoration:none;font-weight:600}
+  .page{max-width:920px;margin:0 auto;padding:78px 24px 48px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:99px;background:rgba(30,58,95,.1);color:#1e3a5f;border:1px solid rgba(30,58,95,.25);margin-bottom:10px}
+  h1{font-size:24px;font-weight:800;color:#0f172a;letter-spacing:-.02em}
+  .meta{font-size:12px;color:#94a3b8;margin-top:4px;margin-bottom:6px}
+  .hdr-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .badge{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:6px 14px;border-radius:99px}
+  .b-VALIDATED{background:rgba(34,197,94,.12);color:#16a34a;border:1px solid rgba(34,197,94,.3)}
+  .b-FLAGGED{background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.3)}
+  .b-REJECTED{background:rgba(244,63,94,.12);color:#e11d48;border:1px solid rgba(244,63,94,.3)}
+  .b-ESCALATED{background:rgba(139,92,246,.12);color:#7c3aed;border:1px solid rgba(139,92,246,.3)}
+  .btn{background:#1e3a5f;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none}
+  .btn:hover{background:#1e40af}
+  .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+  .sum .c{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:11px 13px}
+  .sum .l{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#94a3b8}
+  .sum .v{font-size:14px;font-weight:700;color:#0f172a;margin-top:2px;word-break:break-word}
+  .seclabel{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+  .seclabel::after{content:'';flex:1;height:1px;background:#e2e8f0}
+  .step{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:10px;border-left:4px solid #1e3a5f}
+  .step.ok{border-left-color:#22c55e}.step.warn{border-left-color:#f59e0b}.step.bad{border-left-color:#f43f5e}.step.esc{border-left-color:#8b5cf6}
+  .step h3{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .step .d{font-size:12.5px;color:#475569;line-height:1.55}
+  .rule{border:1px solid #e2e8f0;border-radius:8px;padding:9px 11px;margin-top:7px;background:#f8fafc}
+  .rule .rh{font-size:12px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pill{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:1px 7px;border-radius:6px}
+  .p-confirm{background:rgba(34,197,94,.12);color:#16a34a}.p-reject{background:rgba(244,63,94,.12);color:#e11d48}
+  .p-flag{background:rgba(245,158,11,.12);color:#b45309}.p-escalate{background:rgba(139,92,246,.12);color:#7c3aed}.p-validate{background:rgba(59,130,246,.12);color:#2563eb}
+  .rule .rm{font-size:12px;color:#475569;margin-top:3px;line-height:1.5}
+  .rule .rs{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#7c3aed;margin-top:5px;display:inline-block}
+  .gap{font-size:12px;padding:4px 0;display:flex;gap:8px;align-items:center}
+  .gap .crit{font-size:9px;font-weight:800;text-transform:uppercase;padding:1px 7px;border-radius:6px}
+  .crit-hard{background:rgba(244,63,94,.12);color:#e11d48}.crit-req{background:rgba(245,158,11,.12);color:#b45309}
+  .docs{display:flex;flex-wrap:wrap;gap:8px}.docs span{font-size:11px;background:#eef2f7;border:1px solid #d6deea;border-radius:6px;padding:3px 9px;color:#1e3a5f}
+  .foot{font-size:11px;color:#94a3b8;margin-top:16px;font-style:italic}
+  #err{display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:14px;font-size:13px}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a class="nav-brand" href="/hub"><div class="nav-icon">&#x1F4CB;</div>Coastal DME</a>
+  <a class="nav-back" href="/hub">&larr; Back to Hub</a>
+</nav>
+<div class="page">
+  <div class="hdr-row">
+    <div>
+      <div class="tag">Audit Trail &middot; Defensibility</div>
+      <h1 id="title">Decision Trail</h1>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="badge" id="status"></span>
+      <button class="btn" onclick="exportJson()">&#x2B07; Export record (JSON)</button>
+    </div>
+  </div>
+
+  <div id="err"></div>
+  <div id="body"></div>
+  <div class="foot">Every decision below is reconstructed from the immutable per-episode record &mdash; timestamped, rule-cited, and exportable. This is the defensibility view for compliance &amp; audit.</div>
+</div>
+
+<script>
+const CLAIM = "{{ claim }}";
+let REC = null;
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+async function load(){
+  let r;
+  try { r = await fetch('/api/audit/'+encodeURIComponent(CLAIM)); } catch(e){ return fail('Network error'); }
+  if(!r.ok){ return fail('No audit record found for '+CLAIM); }
+  REC = await r.json();
+  render(REC);
+}
+function fail(m){ document.getElementById('err').style.display='block'; document.getElementById('err').textContent=m; }
+function render(d){
+  const ep=d.episode||{};
+  document.getElementById('title').textContent = 'Decision Trail — '+(ep.patient_name||CLAIM);
+  document.getElementById('meta').textContent = 'Claim '+(ep.claim_number||CLAIM)+' · generated '+(d.generated_at||'');
+  const kg=d.knowledge_graph||{};
+  const st=document.getElementById('status'); st.textContent=kg.status||'—'; st.className='badge b-'+(kg.status||'');
+  const sum=[['Patient',ep.patient_name],['Claim #',ep.claim_number],['DME',ep.dme_item],['HCPCS',ep.hcpcs],['ICD',ep.icd_code],['Carrier',ep.insurance_carrier]];
+  let h='<div class="sum">'+sum.map(([l,v])=>`<div class="c"><div class="l">${esc(l)}</div><div class="v">${esc(v||'—')}</div></div>`).join('')+'</div>';
+
+  h+='<div class="seclabel">Decision Trail</div>';
+  // 1 extraction
+  h+=`<div class="step ok"><h3>① AI Extraction</h3><div class="d">${d.extraction.fields_extracted} fields extracted from ${(d.source_documents||[]).length||'the'} source document(s).${d.extraction.confidence!=null?' Self-reported confidence: <b>'+esc(d.extraction.confidence)+'%</b>.':''}</div></div>`;
+  // 2 conflict
+  const c=d.icd_conflict||{};
+  h+=`<div class="step ${c.detected?'warn':'ok'}"><h3>② Document Cross-Reference</h3><div class="d">${c.detected?('ICD conflict detected. '+esc(c.detail||'')):'No cross-document conflict found.'}</div></div>`;
+  // 3 KG
+  let rules=(kg.fired_rules||[]).map(r=>`<div class="rule"><div class="rh">${esc(r.rule_id||'')} <span class="pill p-${(r.action||'').toLowerCase()}">${esc((r.action||'').toUpperCase())}</span>${r.confidence!=null?'<span style="font-size:10px;color:#94a3b8">conf '+esc(r.confidence)+'%</span>':''}</div><div class="rm">${esc(r.message||'')}</div><span class="rs">Source: ${esc(r.source||'CMS')}</span></div>`).join('');
+  h+=`<div class="step ${kg.status==='REJECTED'?'bad':(kg.status==='ESCALATED'?'esc':(kg.status==='FLAGGED'?'warn':'ok'))}"><h3>③ Knowledge-Graph Validation — ${esc(kg.status||'')}</h3><div class="d">${kg.rules_checked||0} deterministic CMS rules checked · ${kg.rules_fired||0} fired. Rule set: ${esc(kg.source||'')} (${esc(kg.rule_set_date||'')}).</div>${rules||'<div class="d" style="margin-top:6px;color:#94a3b8">No rules fired.</div>'}</div>`;
+  // 4 completeness
+  const comp=d.completeness||{}; const gaps=comp.gaps||{};
+  let gl=Object.keys(gaps).map(k=>`<div class="gap"><span class="crit ${gaps[k]==='HARD BLOCK'?'crit-hard':'crit-req'}">${esc(gaps[k])}</span> ${esc(k)}</div>`).join('');
+  h+=`<div class="step ${comp.is_complete?'ok':'warn'}"><h3>④ Completeness Check</h3><div class="d">${comp.is_complete?'All required fields present — route-ready.':'Gaps detected:'}</div>${gl}</div>`;
+  // 5 decision
+  const dec=d.decision||{};
+  let dtxt = dec.escalated ? 'Escalated to a human specialist (confidence below threshold / conflict).' : (comp.is_complete?'Auto-routed — no human touch required.':'Held for outreach to close gaps'+(dec.outreach_drafted?' (outreach drafted/sent).':'.'));
+  h+=`<div class="step ${dec.escalated?'esc':(comp.is_complete?'ok':'warn')}"><h3>⑤ Decision &amp; Action</h3><div class="d">${esc(dtxt)}</div></div>`;
+  // docs
+  if((d.source_documents||[]).length){ h+=`<div class="seclabel">Source Documents</div><div class="docs">${d.source_documents.map(x=>`<span>&#x1F4C4; ${esc(x)}</span>`).join('')}</div>`; }
+  if((d.linked_docs||[]).length){ h+=`<div class="foot">Linked supplemental documents: ${d.linked_docs.map(esc).join(', ')}</div>`; }
+  document.getElementById('body').innerHTML=h;
+}
+function exportJson(){
+  if(!REC) return;
+  const blob=new Blob([JSON.stringify(REC,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='audit-'+CLAIM+'.json'; a.click();
+}
+load();
+</script>
+</body>
+</html>
