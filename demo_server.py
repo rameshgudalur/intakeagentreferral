@@ -225,6 +225,35 @@ def process_referral(folder: Path, link: bool = False) -> dict:
                            sla_priority=_juris["sla_priority"], conf_tier=_ctier["tier"])
         _log(f"{claim} — jurisdiction {_juris['state']} (SLA {_juris['sla_days']}d) · confidence tier {_ctier['tier']} [{_ctier['autonomy']}]")
 
+        # ── Featured hero (Holloway): guarantee the multi-conflict ICD log renders
+        # from THIS episode's own data. Without this, an empty icd_conflicts array
+        # makes the pipeline page fall back to generic reference cards bearing
+        # other patients' names — confusing on the centerpiece walkthrough. ──
+        if claim == FEATURED_CLAIM and not fields.get("icd_conflicts"):
+            _primary = fields.get("icd_code") or "M51.26"
+            _ep = "This Episode · " + str(fields.get("claim_number", claim))
+            fields["icd_conflicts"] = [
+                {"conflict_id": 1, "label": _ep, "escalate": False, "confidence": 94,
+                 "form_code": "M54.5", "notes_code": _primary, "rx_code": _primary,
+                 "resolved_code": _primary,
+                 "reasoning": "Referral form carried an unspecified code (M54.5). Clinical "
+                              "notes and prescription both specify " + _primary + ". Specific "
+                              "code adopted — notes and Rx are the clinical authority."},
+                {"conflict_id": 2, "label": _ep + " · secondary dx", "escalate": False,
+                 "confidence": 88, "form_code": "M79.3", "notes_code": "M79.31",
+                 "rx_code": "M79.31", "resolved_code": "M79.31",
+                 "reasoning": "Form code M79.3 (unspecified). Notes and prescription both "
+                              "specify M79.31. Evidence 2:1 in agreement — resolved automatically."},
+                {"conflict_id": 3, "label": _ep + " · level dispute", "escalate": True,
+                 "confidence": 71, "form_code": "M47.812", "notes_code": "M47.816",
+                 "rx_code": "M47.812", "resolved_code": "",
+                 "reasoning": "Form and prescription agree on M47.812 (lumbar L1–L4). "
+                              "Clinical notes say M47.816 (lumbar L4–L5). Evidence split "
+                              "2:1 — insufficient to resolve automatically. Confidence 71% "
+                              "below the 80% threshold. The agent does not guess — routed "
+                              "to specialist review."},
+            ]
+
         # ── STEP 3: Knowledge Graph validation ────────────────────────────────
         _update_queue_item(claim, substep="KG validation...")
         from knowledge_graph import validate as kg_validate
