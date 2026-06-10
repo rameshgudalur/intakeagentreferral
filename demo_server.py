@@ -508,6 +508,16 @@ def serve_referral_pdf(claim, filename):
     return send_from_directory(str(claim_dir), filename, mimetype="application/pdf")
 
 
+@app.route("/demo-fax-doc/<filename>")
+def serve_demo_fax_doc(filename):
+    """Serve one of the sample (Michelle Tran) fax documents so the demo can
+    preview the 3 source PDFs the agent will read."""
+    demo_dir = BASE_DIR / "demo_fax"
+    if not filename.endswith(".pdf") or not (demo_dir / filename).exists():
+        return "Not found", 404
+    return send_from_directory(str(demo_dir), filename, mimetype="application/pdf")
+
+
 @app.route("/api/referrals")
 def api_referrals():
     """Return all referral folders with their PDFs and known metadata."""
