@@ -736,6 +736,10 @@ def api_analytics():
 def panel_analytics():
     return render_template("analytics.html")
 
+@app.route("/panel/scale")
+def panel_scale():
+    return render_template("scale.html")
+
 
 @app.route("/api/start", methods=["POST"])
 def api_start():

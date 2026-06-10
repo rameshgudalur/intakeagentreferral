@@ -226,7 +226,7 @@ header{background:#1e3a5f;padding:0 24px;display:flex;align-items:center;justify
     <span style="font-size:18px">&#x26A0;&#xFE0F;</span>
   </div>
   <div class="sb-stat">
-    <div><div class="sb-n yellow" id="sb-outreach">0</div><div class="sb-l">Outreach Sent</div></div>
+    <div><div class="sb-n yellow" id="sb-outreach">0</div><div class="sb-l">Outreach Drafted</div></div>
     <span style="font-size:18px">&#x1F4E7;</span>
   </div>
   <div class="sb-stat">
@@ -242,12 +242,12 @@ header{background:#1e3a5f;padding:0 24px;display:flex;align-items:center;justify
   <div class="log-box" id="agent-log"></div>
 
   <div class="scale-card" id="scale-card">
-    <div class="sc-title">At this rate — 10,000 referrals</div>
-    <div class="sc-row"><div class="sn" id="sc-proj">—</div><div class="sl">Total Time</div></div>
-    <div class="sc-row"><div class="sn">~8,200</div><div class="sl">Gaps Detected</div></div>
-    <div class="sc-row"><div class="sn">~8,200</div><div class="sl">Outreach Sent</div></div>
+    <div class="sc-title">At scale — 10,000 referrals</div>
+    <div class="sc-row"><div class="sn" id="sc-proj">~7 min</div><div class="sl">@ 500 workers</div></div>
+    <div class="sc-row"><div class="sn">~$320</div><div class="sl">LLM cost (≈ any speed)</div></div>
+    <div class="sc-row"><div class="sn">~8,200</div><div class="sl">Outreach Drafted</div></div>
     <div class="sc-row"><div class="sn">~30,000</div><div class="sl">Pages Read</div></div>
-    <div class="sc-note">0 staff hours · fully automated · unattended</div>
+    <div class="sc-note"><a href="/panel/scale" style="color:#93c5fd;font-weight:700;text-decoration:none">Scale &amp; cost calculator &rarr;</a></div>
   </div>
 </aside>
 
@@ -281,7 +281,7 @@ header{background:#1e3a5f;padding:0 24px;display:flex;align-items:center;justify
     <div class="sb2"><div class="sb2-n" style="color:var(--purple)" id="stat-pages">0</div><div class="sb2-l">Pages Read</div></div>
     <div class="sb2"><div class="sb2-n" style="color:var(--green)" id="stat-routed">0</div><div class="sb2-l">Auto-Routed</div></div>
     <div class="sb2"><div class="sb2-n" style="color:var(--red)" id="stat-gaps">0</div><div class="sb2-l">Gaps Found</div></div>
-    <div class="sb2"><div class="sb2-n" style="color:var(--yellow)" id="stat-outreach">0</div><div class="sb2-l">Emails Sent</div></div>
+    <div class="sb2"><div class="sb2-n" style="color:var(--yellow)" id="stat-outreach">0</div><div class="sb2-l">Emails Drafted</div></div>
   </div>
 
   <!-- TABS -->
@@ -346,15 +346,15 @@ header{background:#1e3a5f;padding:0 24px;display:flex;align-items:center;justify
 
   <!-- SCALE CALLOUT -->
   <div class="scale-callout" id="scale-callout">
-    <div class="scl-title">Scale projection — same AI engine, same pipeline</div>
+    <div class="scl-title">Scale projection — time scales with concurrency, cost with volume</div>
     <div class="scl-grid">
       <div class="scl-stat"><div class="scl-n">10,000</div><div class="scl-l">Referrals</div></div>
-      <div class="scl-stat"><div class="scl-n" id="scl-proj">~54 min</div><div class="scl-l">Total Time</div></div>
-      <div class="scl-stat"><div class="scl-n">~8,200</div><div class="scl-l">Gaps Detected</div></div>
-      <div class="scl-stat"><div class="scl-n">~8,200</div><div class="scl-l">Outreach Sent</div></div>
-      <div class="scl-stat"><div class="scl-n">~30,000</div><div class="scl-l">Pages Read</div></div>
+      <div class="scl-stat"><div class="scl-n" id="scl-proj">~2.8 hr</div><div class="scl-l">@ 20 workers</div></div>
+      <div class="scl-stat"><div class="scl-n">~7 min</div><div class="scl-l">@ 500 workers</div></div>
+      <div class="scl-stat"><div class="scl-n">~$320</div><div class="scl-l">LLM cost (≈ either way)</div></div>
+      <div class="scl-stat"><div class="scl-n">~8,200</div><div class="scl-l">Outreach Drafted</div></div>
     </div>
-    <div class="scl-note" id="scl-note">Based on measured throughput from this run · 0 staff hours · fully automated · unattended</div>
+    <div class="scl-note" id="scl-note">Throughput scales ~linearly with concurrency; cost is volume-driven (~$0.032/referral). <a href="/panel/scale" style="color:#93c5fd;font-weight:700;text-decoration:none">Open the Scale &amp; Cost calculator &rarr;</a></div>
   </div>
 
   </div><!-- end tab-queue -->
@@ -645,6 +645,13 @@ function updateUI(data) {
   // Queue table
   renderQueue(queue);
 
+  // Note 3: surface the Holloway drill-in hint as soon as HIS episode is done —
+  // even while the rest of the batch is still processing (opens in a new tab).
+  const _hollowayLive = queue.find(q => q.is_featured);
+  if (_hollowayLive && (_hollowayLive.status === 'routed' || _hollowayLive.status === 'gaps' || _hollowayLive.status === 'error')) {
+    document.getElementById('holloway-hint').style.display = 'flex';
+  }
+
   // Sync inbox queue map and re-render if inbox tab is active
   inboxQueueMap = {};
   queue.forEach(q => { inboxQueueMap[q.claim] = q; });
@@ -677,12 +684,8 @@ function updateUI(data) {
     document.getElementById('status-text').textContent = 'Complete — all referrals processed by intake agent';
     document.getElementById('btn-start').textContent = 'Complete';
 
-    // Scale card
+    // Scale card — honest static figures live in the HTML; deep-dive is /panel/scale
     document.getElementById('scale-card').classList.add('visible');
-    if (data.projection_10k_min > 0) {
-      document.getElementById('sc-proj').textContent = '~' + data.projection_10k_min + ' min';
-      document.getElementById('scl-proj').textContent = '~' + data.projection_10k_min + ' min';
-    }
 
     // Complete banner
     const banner = document.getElementById('complete-banner');
@@ -692,8 +695,6 @@ function updateUI(data) {
 
     // Scale callout
     document.getElementById('scale-callout').classList.add('visible');
-    document.getElementById('scl-note').textContent =
-      `Based on real measured throughput: ${processed} referrals in ${data.elapsed_sec}s · 0 staff hours · fully automated`;
 
     // Holloway hint
     const holloway = queue.find(q => q.is_featured);
@@ -734,7 +735,7 @@ function renderQueue(queue) {
       : `<span class="gap-badge ${item.gaps === 0 ? 'zero' : ''}">${item.gaps}</span>`;
 
     const outreachBadge = item.outreach
-      ? '<span class="outreach-badge">&#x2713; Sent</span>'
+      ? '<span class="outreach-badge">&#x2713; Drafted</span>'
       : (item.status === 'routed' ? '<span style="font-size:10px;color:var(--green)">—</span>' : '—');
 
     const chBadge = item.channel === 'voice'

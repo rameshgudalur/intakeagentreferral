@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scale & Cost Calculator — Coastal DME</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh}
+  .top-nav{position:fixed;top:0;left:0;right:0;height:54px;background:#1e3a5f;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+  .nav-brand{display:flex;align-items:center;gap:10px;color:#fff;font-size:15px;font-weight:700;text-decoration:none}
+  .nav-icon{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .nav-back{color:rgba(255,255,255,.7);font-size:13px;text-decoration:none;font-weight:600}
+  .page{max-width:980px;margin:0 auto;padding:78px 24px 48px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:99px;background:rgba(34,197,94,.1);color:#16a34a;border:1px solid rgba(34,197,94,.25);margin-bottom:10px}
+  h1{font-size:clamp(20px,2.6vw,30px);font-weight:800;color:#0f172a;letter-spacing:-.02em}
+  .sub{font-size:13px;color:#64748b;margin:4px 0 18px;max-width:760px;line-height:1.5}
+  .assume{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8}
+  .fld input{width:120px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px}
+  .fld .hint{font-size:9.5px;color:#94a3b8}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+  th{background:#1e3a5f;color:#fff;font-size:11px;text-align:left;padding:10px 12px;font-weight:700;letter-spacing:.03em}
+  td{padding:11px 12px;border-bottom:1px solid #eef2f7;font-size:13px;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  .rowname{font-weight:800;color:#0f172a}
+  .rowsub{font-size:11px;color:#94a3b8;font-weight:500}
+  .time{font-weight:800;color:#1e3a5f}
+  .cost{font-weight:800;color:#16a34a}
+  .muted{color:#64748b}
+  .r-batch{background:#f5f3ff}
+  .slider-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-top:16px}
+  .slider-card h3{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:12px}
+  input[type=range]{width:100%}
+  .scustom{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+  .scell{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center}
+  .scell .l{font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8}
+  .scell .v{font-size:22px;font-weight:800;color:#0f172a;margin-top:3px}
+  .note{font-size:11.5px;color:#475569;margin-top:16px;line-height:1.6;background:#eff6ff;border-left:4px solid #3b82f6;border-radius:0 8px 8px 0;padding:11px 14px}
+  .note b{color:#0f172a}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a class="nav-brand" href="/hub"><div class="nav-icon">&#x1F4CB;</div>Coastal DME</a>
+  <a class="nav-back" href="/hub">&larr; Back to Hub</a>
+</nav>
+<div class="page">
+  <div class="tag">Scale & Cost</div>
+  <h1>Scale &amp; Cost Calculator</h1>
+  <p class="sub">How long, and how much, to process a batch at different concurrency. <b>Time</b> falls with workers; <b>cost</b> is driven by volume, not speed. Assumptions are editable — these defaults are measured from the live demo.</p>
+
+  <div class="assume">
+    <div class="fld"><label>Volume (referrals)</label><input id="vol" type="number" value="10000"></div>
+    <div class="fld"><label>Latency / referral (sec)</label><input id="lat" type="number" value="20"><span class="hint">LLM wall-time per referral</span></div>
+    <div class="fld"><label>Cost / referral ($)</label><input id="cpr" type="number" step="0.001" value="0.032"><span class="hint">measured token cost</span></div>
+    <div class="fld"><label>$ / vCPU-hour</label><input id="vch" type="number" step="0.01" value="0.04"><span class="hint">cloud compute</span></div>
+    <div class="fld"><label>Workers / vCPU</label><input id="wpc" type="number" value="50"><span class="hint">I/O-bound</span></div>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:30%">Scenario</th><th>Concurrency</th><th>Time for the batch</th><th>LLM cost</th><th>Infra cost</th><th>Total</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="slider-card">
+    <h3>Custom — drag to your target concurrency: <span id="wlbl" style="color:#2563eb"></span> workers</h3>
+    <input id="wslider" type="range" min="20" max="3000" step="20" value="500">
+    <div class="scustom">
+      <div class="scell"><div class="l">Time</div><div class="v" id="c-time">—</div></div>
+      <div class="scell"><div class="l">LLM cost</div><div class="v cost" id="c-llm">—</div></div>
+      <div class="scell"><div class="l">Infra cost</div><div class="v" id="c-infra">—</div></div>
+      <div class="scell"><div class="l">Total</div><div class="v" id="c-total">—</div></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Why infra cost barely moves:</b> total compute = volume × latency is fixed (~<span id="cpuhrs">—</span> vCPU-hours for this batch); adding workers just compresses it into less wall-time — same compute-hours, near-zero infra either way. <b>The real lever for going faster is the LLM rate-limit tier, not server spend.</b> &nbsp;·&nbsp; <b>Batch API</b> trades real-time for ~50% lower token cost (async, within hours).
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+function money(x){ return '$'+ (x>=100? Math.round(x).toLocaleString() : x.toFixed(2)); }
+function fmtTime(sec){
+  if(sec<1) return '<1 sec';
+  if(sec<90) return Math.round(sec)+' sec';
+  if(sec<5400) return (sec/60).toFixed(1)+' min';
+  return (sec/3600).toFixed(1)+' hr';
+}
+function calc(workers, vol, lat, cpr, vch, wpc, batch){
+  const timeSec = batch ? null : vol*lat/workers;
+  const cpuHrs = (vol*lat/3600)/Math.max(wpc,1);
+  const infra = batch ? 0 : cpuHrs*vch;
+  const llm = vol*cpr*(batch?0.5:1);
+  return {timeSec, llm, infra, total: llm+infra, cpuHrs};
+}
+function inp(){ return {vol:+$('vol').value||0, lat:+$('lat').value||0, cpr:+$('cpr').value||0, vch:+$('vch').value||0, wpc:+$('wpc').value||1}; }
+function rowHtml(name,sub,workers,r,cls){
+  const t = r.timeSec==null ? '<span class="muted">async · ≤ a few hrs</span>' : '<span class="time">'+fmtTime(r.timeSec)+'</span>';
+  const w = workers==null ? '<span class="muted">provider-managed</span>' : workers.toLocaleString();
+  return `<tr class="${cls||''}"><td><span class="rowname">${name}</span><br><span class="rowsub">${sub}</span></td><td>${w}</td><td>${t}</td><td class="cost">${money(r.llm)}</td><td class="muted">${money(r.infra)}</td><td class="cost">${money(r.total)}</td></tr>`;
+}
+function render(){
+  const p=inp();
+  const r1=calc(20,p.vol,p.lat,p.cpr,p.vch,p.wpc,false);
+  const r2=calc(500,p.vol,p.lat,p.cpr,p.vch,p.wpc,false);
+  const r3=calc(null,p.vol,p.lat,p.cpr,p.vch,p.wpc,true);
+  $('rows').innerHTML =
+    rowHtml('Row 1 · Standard','today\'s demo config',20,r1) +
+    rowHtml('Row 2 · Scaled real-time','production burst — queue + worker pool',500,r2) +
+    rowHtml('Row 3 · Batch API','async bulk, ~50% token cost',null,r3,'r-batch');
+  $('cpuhrs').textContent = r1.cpuHrs.toFixed(1);
+  // custom slider
+  const w=+$('wslider').value; $('wlbl').textContent=w.toLocaleString();
+  const rc=calc(w,p.vol,p.lat,p.cpr,p.vch,p.wpc,false);
+  $('c-time').textContent=fmtTime(rc.timeSec);
+  $('c-llm').textContent=money(rc.llm);
+  $('c-infra').textContent=money(rc.infra);
+  $('c-total').textContent=money(rc.total);
+}
+['vol','lat','cpr','vch','wpc','wslider'].forEach(id=>$(id).addEventListener('input',render));
+render();
+</script>
+</body>
+</html>
