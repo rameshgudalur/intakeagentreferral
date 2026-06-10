@@ -244,7 +244,7 @@ header{background:#1e3a5f;padding:0 24px;display:flex;align-items:center;justify
   <div class="scale-card" id="scale-card">
     <div class="sc-title">At scale — 10,000 referrals</div>
     <div class="sc-row"><div class="sn" id="sc-proj">~7 min</div><div class="sl">@ 500 workers</div></div>
-    <div class="sc-row"><div class="sn">~$320</div><div class="sl">LLM cost (≈ any speed)</div></div>
+    <div class="sc-row"><div class="sn">~2.8 hr</div><div class="sl">@ 20 workers</div></div>
     <div class="sc-row"><div class="sn">~8,200</div><div class="sl">Outreach Drafted</div></div>
     <div class="sc-row"><div class="sn">~30,000</div><div class="sl">Pages Read</div></div>
     <div class="sc-note"><a href="/panel/scale" style="color:#93c5fd;font-weight:700;text-decoration:none">Scale &amp; cost calculator &rarr;</a></div>
@@ -257,13 +257,13 @@ header{background:#1e3a5f;padding:0 24px;display:flex;align-items:center;justify
   <!-- HERO -->
   <div class="hero">
     <div class="hero-tag">Live Demo · Intake Agent · AI-Powered</div>
-    <div class="hero-title">40 Referral Processing — Intake Agent</div>
+    <div class="hero-title">Referral Processing — Intake Agent</div>
     <div class="hero-sub">Real AI extraction · Real PDF processing · Real gap detection · Real outreach drafting · No simulation.</div>
     <div class="hero-actions">
       <button class="btn-start" id="btn-start" onclick="startProcessing()">&#x1F534; Start Live Processing</button>
       <button class="btn-reset" id="btn-reset" onclick="resetDemo()">&#x21BA; Reset</button>
       <button class="btn-fax" id="btn-fax" onclick="openFaxModal()">&#x1F4E0; Receive New Fax</button>
-      <span class="status-text" id="status-text">Queue loaded — 40 referrals waiting</span>
+      <span class="status-text" id="status-text">Queue loaded — referrals ready</span>
     </div>
     <div class="voice-bar">
       <span style="font-size:13px">&#x1F4DE;</span>
@@ -346,15 +346,15 @@ header{background:#1e3a5f;padding:0 24px;display:flex;align-items:center;justify
 
   <!-- SCALE CALLOUT -->
   <div class="scale-callout" id="scale-callout">
-    <div class="scl-title">Scale projection — time scales with concurrency, cost with volume</div>
+    <div class="scl-title">Scale projection — throughput scales with concurrency</div>
     <div class="scl-grid">
       <div class="scl-stat"><div class="scl-n">10,000</div><div class="scl-l">Referrals</div></div>
       <div class="scl-stat"><div class="scl-n" id="scl-proj">~2.8 hr</div><div class="scl-l">@ 20 workers</div></div>
       <div class="scl-stat"><div class="scl-n">~7 min</div><div class="scl-l">@ 500 workers</div></div>
-      <div class="scl-stat"><div class="scl-n">~$320</div><div class="scl-l">LLM cost (≈ either way)</div></div>
+      <div class="scl-stat"><div class="scl-n">~30,000</div><div class="scl-l">Pages Read</div></div>
       <div class="scl-stat"><div class="scl-n">~8,200</div><div class="scl-l">Outreach Drafted</div></div>
     </div>
-    <div class="scl-note" id="scl-note">Throughput scales ~linearly with concurrency; cost is volume-driven (~$0.032/referral). <a href="/panel/scale" style="color:#93c5fd;font-weight:700;text-decoration:none">Open the Scale &amp; Cost calculator &rarr;</a></div>
+    <div class="scl-note" id="scl-note">Throughput scales ~linearly with concurrency — drag to your target in the <a href="/panel/scale" style="color:#93c5fd;font-weight:700;text-decoration:none">Scale &amp; Cost calculator &rarr;</a></div>
   </div>
 
   </div><!-- end tab-queue -->
@@ -581,7 +581,7 @@ function resetDemo() {
     document.getElementById('btn-reset').style.display = 'none';
     document.getElementById('btn-fax').style.display = 'none';
     document.getElementById('live-badge').style.display = 'none';
-    document.getElementById('status-text').textContent = 'Queue loaded — 40 referrals waiting';
+    document.getElementById('status-text').textContent = 'Queue loaded — referrals ready';
     document.getElementById('queue-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Click Start Live Processing to begin</td></tr>';
     document.getElementById('complete-banner').classList.remove('visible');
     document.getElementById('scale-callout').classList.remove('visible');
