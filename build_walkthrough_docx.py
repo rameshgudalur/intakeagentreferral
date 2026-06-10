@@ -45,6 +45,16 @@ def label_screen(text):
     p.add_run(text)
     return p
 
+def nav(text):
+    p = doc.add_paragraph()
+    p.paragraph_format.space_after = Pt(5)
+    lab = p.add_run("➤ Navigate:  ")
+    lab.bold = True
+    lab.font.color.rgb = NAVY
+    r = p.add_run(text)
+    r.bold = True
+    return p
+
 def key(text):
     p = doc.add_paragraph()
     p.paragraph_format.left_indent = Inches(0.2)
@@ -82,9 +92,35 @@ body("This guide walks an audience through the intake agent end to end — from 
      "concept running on real referral packages, not a slide presentation. Read the lines aloud as "
      "written, or in your own words; the goal is to let the system show its work at every step.")
 body("Allow roughly 25–30 minutes for the walkthrough, with time for questions at the end.")
+nav("Open the demonstration link in a browser, enter the access password, and click "
+    "“Enter POC.” You’ll arrive on the Hub — the home screen with a grid of cards on the "
+    "left and one large “Launch POC” card on the right. Start every stop below from the Hub.")
+
+heading("Click-path at a glance", 13)
+steps = [
+    ("1–2", "Hub → click “8-Agent Value Chain” → back to Hub (top-left “Coastal DME”)"),
+    ("3",   "Hub → click “Launch POC” → click “Start Live Processing”"),
+    ("4",   "Click the highlighted James Holloway → step through with the “→” buttons (Step 1–7)"),
+    ("5",   "Step 05 Email → Step 06 Voice (call auto-places — answer on speaker)"),
+    ("6",   "Step 07 Route Output → back to Hub → “Observability Dashboard” → drill into episode"),
+    ("7",   "Hub → “Launch POC” → click “Receive New Fax”"),
+    ("8",   "Hub → “Scale & Cost Calculator”"),
+    ("9",   "Hub → “Live Observability Dashboard” / “Referral Analytics” / “Coached Intake Simulator”"),
+]
+gt = doc.add_table(rows=1, cols=2)
+gt.style = "Light Grid Accent 1"
+gh = gt.rows[0].cells
+gh[0].paragraphs[0].add_run("Stop").bold = True
+gh[1].paragraphs[0].add_run("Where to click").bold = True
+for s, where in steps:
+    c = gt.add_row().cells
+    c[0].text = s
+    c[1].text = where
 
 # ── 1 ──
 heading("1.  Opening — the problem in one breath")
+nav("Stay on the Hub for this opening. (Optional: click the “8-Agent Value Chain” card to show "
+    "the bigger picture, then click the “Coastal DME” name at the top-left to come back.)")
 label_say("Every referral that arrives today is a person reading three or four documents — a "
           "referral form, clinical notes, a prescription — pulling out the key fields by hand, "
           "spotting what’s missing, and chasing the case manager for the rest. It’s accurate "
@@ -96,14 +132,19 @@ key("We are not replacing judgment. We are removing the manual reading and the c
 
 # ── 2 ──
 heading("2.  The starting point — what the system covers")
-label_screen("The launch hub, with its set of capability cards.")
-label_say("Everything launches from one place. The centerpiece is the live intake agent. Around it "
-          "sit live operational metrics, an analytics layer, a scale-and-cost view, and a training "
-          "module for new associates. We’ll spend most of our time in the live agent and come "
-          "back to the rest.")
+nav("On the Hub, click the “8-Agent Value Chain” card. After you’ve framed it, click the "
+    "“Coastal DME” name at the top-left to return to the Hub.")
+label_screen("The eight-agent value chain — referral to payment — with Agent 1 (intake) built and live.")
+label_say("Before we go live, here’s the bigger picture. The full workers’-comp operations cycle, "
+          "referral to payment, is eight modular agents. What you’re about to see is the first one — "
+          "intake — built and running today. The others are on the roadmap, each one deployable on "
+          "its own inside your environment. So this isn’t a science project; it’s the first agent "
+          "of a chain, live.")
 
 # ── 3 ──
 heading("3.  Live processing — watch it work")
+nav("On the Hub, click the large “Launch POC” card on the right (“Live Intake Agent POC”). "
+    "On the live screen, click the green “Start Live Processing” button.")
 label_screen("A queue of incoming referrals processing in real time.")
 label_say("These are real referral packages going through the agent right now. For each one it reads "
           "every page, extracts the fields, checks them against a rules engine, scores its own "
@@ -115,6 +156,9 @@ body("As the queue runs, point out one referral you’ll open in detail, and say
 
 # ── 4 ──
 heading("4.  Inside one referral — the “is it real?” moment")
+nav("As the queue runs, the James Holloway referral is highlighted — click it (or click "
+    "“Open Pipeline” on his row) to open the full pipeline. Move through the steps with the "
+    "“→” button at the bottom of each step (or the step tabs across the top): Step 1 through Step 7.")
 label_screen("The full step-by-step pipeline for a single referral.")
 body("Walk the steps from the top.")
 label_say("Three source documents. The agent pulled every field and tells you exactly where each "
@@ -134,6 +178,8 @@ label_say("It also reads the jurisdiction and applies the right turnaround clock
 
 # ── 5 ──
 heading("5.  Reaching out — email, then a live phone call")
+nav("Continue to “Step 05 — Email Outreach,” then to “Step 06 — Voice Outreach.” On Step 6 the "
+    "call places itself automatically — have your phone ready and answer it on speaker.")
 label_screen("The outreach step, where the agent contacts the case manager for the missing items.")
 label_say("For the missing items, the agent first drafts an email to the case manager, ready for a "
           "person to approve and send. When email goes unanswered, it picks up the phone.")
@@ -147,6 +193,9 @@ label_say("And now — only once the call has actually gone out — the transcri
 
 # ── 6 ──
 heading("6.  The complete record — and the audit trail")
+nav("Advance to “Step 07 — Route Output” to show the finished record. Then click the “Coastal DME” "
+    "name at the top-left to return to the Hub, and open the “Observability Dashboard” card; drill "
+    "into the episode to show its audit trail.")
 label_screen("The final referral record, then the audit trail for the same referral.")
 label_say("Every field populated, every gap resolved — by email, by phone, or by the agent’s "
           "own correction. The moment this record locks, it’s ready to dispatch.")
@@ -157,6 +206,8 @@ key("Defensibility is one click, not an investigation.")
 
 # ── 7 ──
 heading("7.  Intake by fax — live")
+nav("Return to the Hub and open the “Launch POC” card again (the live agent screen). Click the "
+    "“Receive New Fax” button near the top to show the live intake fax number.")
 label_screen("The incoming-fax panel, showing the live intake fax number.")
 label_say("Intake doesn’t only come from a neat queue — a great deal of it still arrives by "
           "fax. This is our live intake line. Fax a referral package — the three documents "
@@ -167,6 +218,7 @@ body("You can demonstrate this live by faxing a package to the number on screen 
 
 # ── 8 ──
 heading("8.  Scale and cost — the honest version")
+nav("Return to the Hub and click the “Scale & Cost Calculator” card.")
 label_screen("The scale-and-cost view, with adjustable inputs.")
 label_say("The question every leader asks: does this hold up at volume, and what does it cost? "
           "Here’s the honest answer — and you can change the inputs yourself.")
@@ -178,6 +230,8 @@ key("Cost is a few cents per referral, measured on the actual run — not estima
 
 # ── 9 ──
 heading("9.  The broader layer (optional)")
+nav("From the Hub, the “Live Observability Dashboard,” “Referral Analytics & Insights,” and "
+    "“Coached Intake Simulator” cards — open whichever the audience is most interested in.")
 label_screen("Live metrics, analytics, and the training module.")
 label_say("The agent is one layer. Around it you get live observability, an analytics view of trends "
           "like escalation and auto-routing rates, and a path to bring your associates along — "
@@ -185,6 +239,7 @@ label_say("The agent is one layer. Around it you get live observability, an anal
 
 # ── 10 ──
 heading("10.  Closing")
+nav("Close from wherever you are — no navigation needed.")
 label_say("What you’ve seen is a working proof of concept on real referral packages. It reads, it "
           "validates against cited rules, it knows its own confidence, it escalates instead of "
           "guessing, it reaches out by email and by phone, it takes in faxes live, and it logs every "
