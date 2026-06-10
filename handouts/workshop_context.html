@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setting the Context — Coastal DME Intake Agent Workshop</title>
+<style>
+  @page { size: Letter landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #475569; }
+  .board { position: relative; width: 100%; min-height: 100vh; background: #fff; padding: 38px 46px 44px; display: flex; flex-direction: column; }
+  @media screen { .board { max-width: 1100px; min-height: 720px; margin: 18px auto; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.3); } }
+
+  .top { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #1e3a5f; padding-bottom: 12px; margin-bottom: 22px; }
+  .kick { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #2563eb; }
+  h1 { font-size: 32px; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin-top: 2px; }
+  .top .date { text-align: right; font-size: 16px; font-weight: 800; color: #1e3a5f; }
+  .top .date span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
+
+  .cols { flex: 1; display: grid; grid-template-columns: 1fr 1.05fr 1fr; gap: 18px; }
+  .col { display: flex; flex-direction: column; }
+  .col-h { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid; }
+  .col.left .col-h { color: #2563eb; border-color: #bfdbfe; }
+  .col.mid .col-h { color: #1e3a5f; border-color: #cbd5e1; }
+  .col.right .col-h { color: #16a34a; border-color: #bbf7d0; }
+
+  /* left & right principle items */
+  .prin { display: flex; flex-direction: column; gap: 12px; }
+  .pitem { border-radius: 10px; padding: 12px 14px; border-left: 4px solid; background: #f8fafc; }
+  .col.left .pitem { border-left-color: #3b82f6; }
+  .col.right .pitem { border-left-color: #22c55e; }
+  .pitem .ph { font-size: 13.5px; font-weight: 800; color: #0f172a; line-height: 1.25; margin-bottom: 3px; }
+  .pitem .pd { font-size: 11.5px; color: #64748b; line-height: 1.45; }
+
+  /* middle agenda */
+  .seg { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+  .seg.am { border-top: 4px solid #3b82f6; } .seg.pm { border-top: 4px solid #14b8a6; }
+  .seg-t { font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+  .seg ul { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .seg li { font-size: 12px; color: #475569; display: flex; gap: 8px; line-height: 1.35; }
+  .seg li .tm { font-weight: 800; color: #1e3a5f; white-space: nowrap; min-width: 38px; }
+  .badge { font-size: 8.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 0 6px; border-radius: 99px; background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; align-self: center; }
+  .day-note { text-align: center; font-size: 11px; font-style: italic; color: #94a3b8; }
+
+  .arc { margin-top: 18px; background: linear-gradient(135deg,#1e3a5f,#1e40af); color: #fff; border-radius: 12px; padding: 14px 22px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: .01em; }
+  .arc b { color: #93c5fd; }
+  .foot { margin-top: 12px; font-size: 10px; color: #cbd5e1; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="top">
+    <div>
+      <div class="kick">Client Workshop &middot; Setting the Context</div>
+      <h1>Design &rarr; Demo &rarr; Deploy</h1>
+    </div>
+    <div class="date">June 10, 2026<span>Coastal DME &middot; Intake Agent</span></div>
+  </div>
+
+  <div class="cols">
+
+    <!-- LEFT -->
+    <div class="col left">
+      <div class="col-h">&#x25C0; Operating Principles</div>
+      <div class="prin">
+        <div class="pitem">
+          <div class="ph">Autonomous where confident, human where not</div>
+          <div class="pd">The agent never guesses on a clinical or coding decision &mdash; it escalates to a specialist.</div>
+        </div>
+        <div class="pitem">
+          <div class="ph">Deterministic compliance, not probability</div>
+          <div class="pd">Coding is validated against 24 cited CMS rules &mdash; confirm or reject, never a guess.</div>
+        </div>
+        <div class="pitem">
+          <div class="ph">Every decision logged &amp; auditable</div>
+          <div class="pd">Full trail per episode: reasoning, confidence score, and the exact rule that fired.</div>
+        </div>
+        <div class="pitem">
+          <div class="ph">Fits your stack</div>
+          <div class="pd">API / RPA / file &mdash; no rip-and-replace. PHI stays inside your boundary.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE -->
+    <div class="col mid">
+      <div class="col-h">The Day &mdash; Summary Agenda</div>
+      <div class="seg am">
+        <div class="seg-t">&#x1F305; Morning &mdash; Demonstrate &amp; Build Trust</div>
+        <ul>
+          <li><span class="tm">9:00</span>Welcome &amp; objectives</li>
+          <li><span class="tm">9:30</span>Live demo &mdash; real referrals <span class="badge">&#x1F9EA; Lab</span></li>
+          <li><span class="tm">10:15</span>Architecture &amp; workflow</li>
+          <li><span class="tm">11:00</span>Trust &amp; human-in-the-loop</li>
+          <li><span class="tm">11:40</span>Integration &amp; knowledge graph <span class="badge">&#x1F0CF; Cards</span></li>
+        </ul>
+      </div>
+      <div class="seg pm">
+        <div class="seg-t">&#x1F306; Afternoon &mdash; Prove Fit &amp; Plan Rollout</div>
+        <ul>
+          <li><span class="tm">1:10</span>Security, compliance &amp; enterprise</li>
+          <li><span class="tm">1:50</span>Business case &amp; ROI</li>
+          <li><span class="tm">2:45</span>Deployment &amp; rollout <span class="badge">&#x1F6E0; Build</span></li>
+          <li><span class="tm">3:25</span>Roadmap &amp; ecosystem</li>
+          <li><span class="tm">3:55</span>Decisions, owners &amp; next steps</li>
+        </ul>
+      </div>
+      <div class="day-note">1 day &middot; 9:00&ndash;4:30 &middot; hands-on, not a slideshow</div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col right">
+      <div class="col-h">What We&rsquo;ll Prove &#x25B6;</div>
+      <div class="prin">
+        <div class="pitem">
+          <div class="ph">The design is sound</div>
+          <div class="pd">Modular agent + OWL knowledge graph, human-in-the-loop at every flagged exception.</div>
+        </div>
+        <div class="pitem">
+          <div class="ph">The demo is real</div>
+          <div class="pd">A live Claude agent on actual referral PDFs &mdash; on your representative data.</div>
+        </div>
+        <div class="pitem">
+          <div class="ph">The rollout is feasible</div>
+          <div class="pd">A concrete 8&ndash;12 week path into your environment &mdash; owners &amp; dates agreed in the room.</div>
+        </div>
+        <div class="pitem">
+          <div class="ph">It&rsquo;s a platform</div>
+          <div class="pd">Agent 1 (intake) live today; 7 more agents in the referral-to-payment value chain.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="arc">The arc in one line: <b>Wow &rarr; Trust &rarr; Fit &rarr; Justify &rarr; Plan &rarr; Commit</b></div>
+  <div class="foot"><span>Coastal DME &middot; Intake Agent Platform</span><span>Setting the Context</span></div>
+
+</div>
+</body>
+</html>

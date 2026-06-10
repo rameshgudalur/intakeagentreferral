@@ -18,7 +18,7 @@ from escalation_review import review_bp, add_to_queue
 
 app = Flask(__name__)
 app.register_blueprint(review_bp)
-VAPI_KEY = os.environ.get("VAPI_API_Key", "")
+VAPI_KEY = os.environ.get("VAPI_API_KEY") or os.environ.get("VAPI_API_Key", "")
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 
@@ -333,7 +333,8 @@ def update_vapi_webhook(public_url: str):
     webhook_url  = f"{public_url}/vapi-webhook"
     r = httpx.patch(
         f"https://api.vapi.ai/assistant/{assistant_id}",
-        headers={"Authorization": f"Bearer {VAPI_KEY}"},
+        headers={"Authorization": f"Bearer {VAPI_KEY}",
+                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"},
         json={"serverUrl": webhook_url}
     )
     if r.status_code == 200:

@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
-from intake_agent import load_pdfs, extract_fields, check_completeness, draft_outreach_email, save_episode, send_email
+from intake_agent import load_pdfs, extract_fields, check_completeness, draft_outreach_email, save_episode, send_email, get_usage, reset_usage
 
 DEMO_EMAIL = "coastalinsurance@gmail.com"
 from escalation_review import review_bp, add_to_queue
@@ -81,19 +81,33 @@ _state = {
         "pages_read": 0, "gaps_detected": 0,
         "outreach_drafted": 0, "routed": 0,
         "icd_conflicts": 0, "escalations": 0,
+        "errors": 0,
+        "kg_validated": 0, "kg_flagged": 0, "kg_rejected": 0, "kg_escalated": 0,
+        "confidence_sum": 0, "confidence_count": 0,
     },
+    "latencies":   [],     # per-episode seconds (for avg / p50 / p95)
     "start_time":  None,
     "end_time":    None,
     "wall_sec":    0,
     "events":      [],     # log of agent actions
 }
 
+# Append-only observability / audit event log (survives restarts)
+OBS_LOG = OUTPUT_DIR / "obs_events.jsonl"
+
 def _log(msg: str):
-    ts = datetime.datetime.now().strftime("%H:%M:%S")
+    now = datetime.datetime.now()
+    ts = now.strftime("%H:%M:%S")
     with _lock:
         _state["events"].append({"ts": ts, "msg": msg})
         if len(_state["events"]) > 200:
             _state["events"] = _state["events"][-200:]
+    # Append to a persisted, append-only observability / audit log
+    try:
+        with OBS_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"ts": now.isoformat(timespec="seconds"), "msg": msg}) + "\n")
+    except Exception:
+        pass
 
 def _add_queue_item(claim: str):
     channel = "voice" if claim in VOICE_CLAIMS else "fax"
@@ -165,6 +179,18 @@ def process_referral(folder: Path) -> dict:
         fields["kg_validation"] = kg_report
         _log(f"{claim} — KG: {kg_report['status']} · {kg_report['rules_fired']} rules · {kg_report['confirmations']} confirmed")
 
+        # observability: KG outcome distribution + confidence
+        _kg_key = {"VALIDATED": "kg_validated", "FLAGGED": "kg_flagged",
+                   "REJECTED": "kg_rejected", "ESCALATED": "kg_escalated"}.get(
+                   str(kg_report.get("status", "")).upper())
+        _conf = fields.get("confidence")
+        with _lock:
+            if _kg_key:
+                _state["stats"][_kg_key] += 1
+            if isinstance(_conf, (int, float)) and _conf:
+                _state["stats"]["confidence_sum"] += _conf
+                _state["stats"]["confidence_count"] += 1
+
         # ICD conflict
         if fields.get("icd_conflict"):
             with _lock:
@@ -230,6 +256,7 @@ def process_referral(folder: Path) -> dict:
 
         with _lock:
             _state["processed"] += 1
+            _state["latencies"].append(elapsed)
 
         # Module 4+5: Email draft + save episode — runs in background (doesn't block row completion)
         def _finalize(fields=fields, completeness=completeness, folder=folder, claim=claim):
@@ -266,6 +293,7 @@ def process_referral(folder: Path) -> dict:
         _log(f"{claim} — ERROR: {str(e)[:80]}")
         with _lock:
             _state["processed"] += 1
+            _state["stats"]["errors"] += 1
         return {"claim": claim, "status": "error", "error": str(e)}
 
 
@@ -309,7 +337,7 @@ def run_batch(folders: list, workers: int = 20):
 
 # ── API ENDPOINTS ─────────────────────────────────────────────────────────────
 
-PUBLIC_ROUTES = {"login", "static"}
+PUBLIC_ROUTES = {"login", "static", "api_inbound_fax"}
 
 @app.before_request
 def require_login():
@@ -381,6 +409,11 @@ def panel_ecosystem():
 @app.route("/panel/integration")
 def panel_integration():
     return render_template("panel_integration.html")
+
+
+@app.route("/panel/workshop")
+def panel_workshop():
+    return render_template("panel_workshop.html")
 
 
 @app.route("/referrals/<claim>/<filename>")
@@ -467,6 +500,85 @@ def api_status():
     return jsonify(state)
 
 
+# Claude Sonnet token pricing (USD per token) — adjust to your contracted rate
+_INPUT_RATE  = 3.0  / 1_000_000
+_OUTPUT_RATE = 15.0 / 1_000_000
+
+@app.route("/api/metrics")
+def api_metrics():
+    """Aggregated observability metrics — throughput, latency, AI quality, cost."""
+    with _lock:
+        s = dict(_state["stats"])
+        lat = sorted(_state["latencies"])
+        processed = _state["processed"]
+        total = _state["total"]
+        status = _state["status"]
+        queue = list(_state["queue"])
+        start = _state["start_time"]
+        wall = _state["wall_sec"]
+
+    elapsed = (time.time() - start) if (start and status == "running") else (wall or 0)
+    elapsed = max(elapsed, 0.001)
+
+    def pctl(p):
+        if not lat:
+            return 0
+        i = min(len(lat) - 1, int(round((p / 100.0) * (len(lat) - 1))))
+        return round(lat[i], 1)
+
+    u = get_usage()
+    cost = u["input_tokens"] * _INPUT_RATE + u["output_tokens"] * _OUTPUT_RATE
+    cc = s.get("confidence_count", 0)
+    rate = lambda n: round(n / processed * 100, 1) if processed else 0
+
+    return jsonify({
+        "status": status,
+        "processed": processed,
+        "total": total,
+        "queue_depth": len([q for q in queue if q.get("status") in ("queued", "processing")]),
+        "processing_now": len([q for q in queue if q.get("status") == "processing"]),
+        "throughput_per_min": round(processed / elapsed * 60, 1) if processed else 0,
+        "latency": {"avg_s": round(sum(lat) / len(lat), 1) if lat else 0,
+                    "p50_s": pctl(50), "p95_s": pctl(95),
+                    "max_s": round(lat[-1], 1) if lat else 0},
+        "ai_quality": {
+            "avg_confidence": round(s["confidence_sum"] / cc, 1) if cc else 0,
+            "escalations": s["escalations"], "escalation_rate": rate(s["escalations"]),
+            "icd_conflicts": s["icd_conflicts"], "icd_conflict_rate": rate(s["icd_conflicts"]),
+            "auto_route_rate": rate(s["routed"]),
+        },
+        "kg": {"validated": s["kg_validated"], "flagged": s["kg_flagged"],
+               "rejected": s["kg_rejected"], "escalated": s["kg_escalated"]},
+        "errors": {"count": s["errors"], "rate": rate(s["errors"])},
+        "cost": {"llm_calls": u["calls"], "input_tokens": u["input_tokens"],
+                 "output_tokens": u["output_tokens"], "total_usd": round(cost, 4),
+                 "per_referral_usd": round(cost / processed, 4) if processed else 0},
+        "stats": s,
+    })
+
+
+@app.route("/panel/metrics")
+def panel_metrics():
+    return render_template("metrics.html")
+
+
+# ── Intaketraining — Coached Intake Simulator ─────────────────────────────────
+@app.route("/panel/training")
+def panel_training():
+    return render_template("training.html")
+
+@app.route("/api/training/cases")
+def api_training_cases():
+    import intake_training
+    return jsonify(intake_training.list_cases())
+
+@app.route("/api/training/grade", methods=["POST"])
+def api_training_grade():
+    import intake_training
+    sub = request.get_json(silent=True) or {}
+    return jsonify(intake_training.grade(sub.get("case_id"), sub))
+
+
 @app.route("/api/start", methods=["POST"])
 def api_start():
     with _lock:
@@ -484,6 +596,8 @@ def api_start():
         _state["wall_sec"]   = 0
         for k in _state["stats"]:
             _state["stats"][k] = 0
+        _state["latencies"] = []
+    reset_usage()
 
     # Get referral folders (40 demo referrals)
     folders = sorted([
@@ -517,6 +631,8 @@ def api_reset():
         _state["wall_sec"]   = 0
         for k in _state["stats"]:
             _state["stats"][k] = 0
+        _state["latencies"] = []
+    reset_usage()
     # Clear escalation queue so each demo run starts fresh
     eq_file = OUTPUT_DIR / "escalation_queue.json"
     if eq_file.exists():
@@ -619,6 +735,64 @@ def api_upload_fax():
     _log(f"New fax received — {claim} — processing now")
 
     return jsonify({"status": "processing", "claim": claim})
+
+
+@app.route("/api/inbound-fax", methods=["POST"])
+def api_inbound_fax():
+    """Webhook — Telnyx posts here when a real fax is received on our number.
+    Verifies the signature, downloads the fax PDF, and runs it through the
+    same live pipeline as an uploaded fax."""
+    import telnyx_fax
+    raw = request.get_data()
+    sig = request.headers.get("telnyx-signature-ed25519", "")
+    ts = request.headers.get("telnyx-timestamp", "")
+    public_key = os.environ.get("TELNYX_PUBLIC_KEY", "")
+    if not telnyx_fax.verify_signature(raw, sig, ts, public_key):
+        _log("Inbound fax rejected — invalid webhook signature")
+        return jsonify({"error": "invalid signature"}), 403
+
+    try:
+        body = json.loads(raw.decode("utf-8") or "{}")
+    except ValueError:
+        return jsonify({"error": "bad payload"}), 400
+
+    data = body.get("data") or {}
+    event = data.get("event_type", "")
+    payload = data.get("payload") or {}
+    # Telnyx fires fax.received when an inbound fax finishes; ack other events.
+    if event and event != "fax.received":
+        return jsonify({"status": "ignored", "event": event}), 200
+
+    media_url = payload.get("media_url") or payload.get("original_media_url")
+    if not media_url:
+        return jsonify({"error": "no media_url"}), 400
+
+    claim = f"WC-FAX-{datetime.datetime.now().strftime('%H%M%S')}"
+    folder = REFERRALS_DIR / claim
+    folder.mkdir(exist_ok=True)
+    try:
+        pdf_bytes = telnyx_fax.download_fax(media_url, os.environ.get("TELNYX_API_KEY", ""))
+        (folder / "1_fax.pdf").write_bytes(pdf_bytes)
+    except Exception as e:
+        _log(f"Inbound fax download failed — {e}")
+        return jsonify({"error": "download failed"}), 502
+
+    sender = payload.get("from", "unknown")
+    pages = payload.get("page_count", "?")
+    with _lock:
+        _state["queue"].insert(0, {
+            "claim": claim, "patient": "Incoming fax...",
+            "equipment": "", "channel": "fax",
+            "priority": "", "status": "queued",
+            "gaps": 0, "outreach": False,
+            "icd_conflict": False, "elapsed": 0,
+            "is_featured": False,
+        })
+        _state["total"] = _state.get("total", 0) + 1
+
+    threading.Thread(target=process_referral, args=(folder,), daemon=False).start()
+    _log(f"Inbound fax received from {sender} — {claim} ({pages} pages) — processing now")
+    return jsonify({"status": "processing", "claim": claim}), 200
 
 
 @app.route("/api/trigger-fax", methods=["POST"])

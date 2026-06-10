@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intake Simulator — Coached Training | Coastal DME</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }
+  .top-nav { position: fixed; top:0; left:0; right:0; height:54px; background:#1e3a5f; display:flex; align-items:center; justify-content:space-between; padding:0 28px; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,.18); }
+  .nav-brand { display:flex; align-items:center; gap:10px; color:#fff; font-size:15px; font-weight:700; text-decoration:none; }
+  .nav-icon { width:32px; height:32px; background:rgba(255,255,255,.15); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+  .nav-back { color:rgba(255,255,255,.7); font-size:13px; text-decoration:none; font-weight:600; }
+  .page { max-width: 1000px; margin:0 auto; padding:78px 24px 48px; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:4px 12px; border-radius:99px; background:rgba(139,92,246,.1); color:#7c3aed; border:1px solid rgba(139,92,246,.25); margin-bottom:12px; }
+  h1 { font-size:clamp(20px,2.6vw,30px); font-weight:800; color:#0f172a; letter-spacing:-.02em; margin-bottom:6px; }
+  .sub { font-size:14px; color:#64748b; margin-bottom:22px; }
+
+  .cases { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:8px; }
+  .ccard { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; cursor:pointer; border-left:4px solid #8b5cf6; transition:transform .15s, box-shadow .15s; }
+  .ccard:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.08); }
+  .ccard .lvl { font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#7c3aed; }
+  .ccard .t { font-size:15px; font-weight:800; color:#0f172a; margin:4px 0; }
+  .ccard .p { font-size:12px; color:#64748b; line-height:1.5; }
+
+  .panel { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:22px; margin-top:14px; display:none; }
+  .panel.show { display:block; }
+  .case-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:6px; }
+  .case-title { font-size:18px; font-weight:800; color:#0f172a; }
+  .case-sum { font-size:13px; color:#64748b; line-height:1.6; margin-bottom:16px; }
+  .docs { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+  .doc { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; }
+  .doc .dn { font-size:11px; font-weight:800; color:#1e3a5f; text-transform:uppercase; letter-spacing:.04em; margin-bottom:7px; }
+  .doc ul { list-style:none; } .doc li { font-size:12px; color:#475569; line-height:1.5; padding-left:12px; position:relative; }
+  .doc li::before { content:'•'; position:absolute; left:0; color:#94a3b8; }
+
+  .form-sec { border-top:1px solid #e2e8f0; padding-top:16px; }
+  .fl { font-size:12px; font-weight:800; color:#0f172a; margin-bottom:7px; display:block; }
+  .row { margin-bottom:16px; }
+  input[type=text] { width:260px; max-width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; }
+  .opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .opt { font-size:13px; padding:8px 14px; border:1px solid #cbd5e1; border-radius:8px; cursor:pointer; background:#fff; user-select:none; }
+  .opt input { margin-right:6px; }
+  .opt:hover { border-color:#8b5cf6; }
+  .btn { background:#1e3a5f; color:#fff; border:none; border-radius:10px; padding:12px 26px; font-size:14px; font-weight:800; cursor:pointer; }
+  .btn:hover { background:#1e40af; }
+  .btn.ghost { background:#fff; color:#1e3a5f; border:1px solid #cbd5e1; }
+
+  /* results */
+  .result { margin-top:18px; display:none; }
+  .result.show { display:block; }
+  .scorebar { display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:12px; margin-bottom:14px; }
+  .scorebar.pass { background:#f0fdf4; border:1px solid #bbf7d0; } .scorebar.fail { background:#fef2f2; border:1px solid #fecaca; }
+  .scorebar .sc { font-size:30px; font-weight:800; } .scorebar.pass .sc { color:#16a34a; } .scorebar.fail .sc { color:#e11d48; }
+  .scorebar .msg { font-size:14px; font-weight:700; color:#0f172a; } .scorebar .msg span { display:block; font-size:12px; font-weight:500; color:#64748b; margin-top:2px; }
+  .fb { border:1px solid #e2e8f0; border-radius:10px; padding:13px 15px; margin-bottom:9px; border-left:4px solid #cbd5e1; }
+  .fb.ok { border-left-color:#22c55e; } .fb.no { border-left-color:#f43f5e; }
+  .fb .h { font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; }
+  .fb .ans { font-size:12px; color:#475569; margin:4px 0; }
+  .fb .ans b.x { color:#e11d48; } .fb .ans b.c { color:#16a34a; }
+  .fb .rule { font-size:10px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:#7c3aed; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); border-radius:6px; padding:2px 8px; display:inline-block; margin:5px 0; }
+  .fb .why { font-size:12.5px; color:#374151; line-height:1.55; }
+  @media (max-width:800px){ .cases,.docs{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a class="nav-brand" href="/hub"><div class="nav-icon">&#x1F4CB;</div>Coastal DME</a>
+  <a class="nav-back" href="/hub">&larr; Back to Hub</a>
+</nav>
+
+<div class="page">
+  <div class="tag">Intaketraining · Simulator</div>
+  <h1>Coached Intake Simulator</h1>
+  <p class="sub">Pick a case, work the referral like the real job &mdash; then the agent grades and coaches you with the exact CMS rule. Experiential, not a slide deck.</p>
+
+  <div class="cases" id="cases"></div>
+
+  <div class="panel" id="panel">
+    <div class="case-head"><div class="case-title" id="cTitle"></div><button class="btn ghost" onclick="backToList()">&larr; All cases</button></div>
+    <div class="case-sum" id="cSum"></div>
+    <div class="docs" id="cDocs"></div>
+
+    <div class="form-sec">
+      <div class="row"><label class="fl">1 · Primary ICD-10 code</label><input type="text" id="inIcd" placeholder="e.g., S83.209A"></div>
+      <div class="row"><label class="fl">2 · Is there an ICD conflict across documents?</label>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="conflict" value="yes">Yes</label>
+          <label class="opt"><input type="radio" name="conflict" value="no">No</label>
+        </div>
+      </div>
+      <div class="row"><label class="fl">3 · Blocking / missing fields</label>
+        <div class="opts" id="gapOpts"></div>
+      </div>
+      <div class="row"><label class="fl">4 · Your decision</label>
+        <div class="opts" id="decOpts"></div>
+      </div>
+      <button class="btn" onclick="submitCase()">Submit &amp; get coached &rarr;</button>
+    </div>
+
+    <div class="result" id="result"></div>
+  </div>
+</div>
+
+<script>
+let DATA=null, current=null;
+async function load(){
+  DATA = await (await fetch('/api/training/cases')).json();
+  const el=document.getElementById('cases');
+  el.innerHTML = DATA.cases.map(c =>
+    `<div class="ccard" onclick="openCase('${c.id}')">
+       <div class="lvl">Level ${c.level} · ${c.patient}</div>
+       <div class="t">${c.title}</div>
+       <div class="p">${c.summary}</div>
+     </div>`).join('');
+}
+function openCase(id){
+  current = DATA.cases.find(c=>c.id===id);
+  document.getElementById('cTitle').textContent = current.title;
+  document.getElementById('cSum').textContent = current.summary;
+  document.getElementById('cDocs').innerHTML = current.documents.map(d =>
+    `<div class="doc"><div class="dn">${d.name}</div><ul>${d.facts.map(f=>`<li>${f}</li>`).join('')}</ul></div>`).join('');
+  // gaps
+  document.getElementById('gapOpts').innerHTML = DATA.gap_options.map(g =>
+    `<label class="opt"><input type="checkbox" class="gap" value="${g}">${g}</label>`).join('');
+  // decisions
+  document.getElementById('decOpts').innerHTML = Object.entries(DATA.decisions).map(([k,v]) =>
+    `<label class="opt"><input type="radio" name="dec" value="${k}">${v}</label>`).join('');
+  document.getElementById('inIcd').value='';
+  document.getElementById('result').className='result';
+  document.getElementById('result').innerHTML='';
+  document.getElementById('cases').style.display='none';
+  document.getElementById('panel').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function backToList(){
+  document.getElementById('panel').classList.remove('show');
+  document.getElementById('cases').style.display='grid';
+}
+async function submitCase(){
+  const conflict = document.querySelector('input[name=conflict]:checked');
+  const dec = document.querySelector('input[name=dec]:checked');
+  const gaps = Array.from(document.querySelectorAll('.gap:checked')).map(c=>c.value);
+  const body = { case_id: current.id, icd: document.getElementById('inIcd').value,
+                 has_conflict: conflict ? conflict.value==='yes' : false,
+                 blocking_gaps: gaps.length?gaps:['none'], decision: dec ? dec.value : '' };
+  const r = await (await fetch('/api/training/grade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  render(r);
+}
+const LBL={icd:'Primary ICD code',conflict:'ICD conflict?',gaps:'Blocking gaps',decision:'Decision'};
+function render(r){
+  const pass = r.passed;
+  let html = `<div class="scorebar ${pass?'pass':'fail'}"><div class="sc">${r.score}/${r.max}</div>
+    <div class="msg">${pass?'Nice — you passed this case.':'Not yet — review the coaching below.'}
+      <span>The agent graded each decision against the CMS rules.</span></div></div>`;
+  html += r.items.map(it =>
+    `<div class="fb ${it.correct?'ok':'no'}">
+       <div class="h">${it.correct?'✓':'✗'} ${LBL[it.dim]}</div>
+       <div class="ans">Your answer: <b class="${it.correct?'c':'x'}">${it.your||'—'}</b>${it.correct?'':` &nbsp;·&nbsp; Correct: <b class="c">${it.expected}</b>`}</div>
+       <div class="rule">${it.rule}</div>
+       <div class="why">${it.why}</div>
+     </div>`).join('');
+  html += `<div style="margin-top:14px"><button class="btn ghost" onclick="openCase('${current.id}')">Try again</button> <button class="btn" onclick="backToList()">Next case &rarr;</button></div>`;
+  const el=document.getElementById('result'); el.innerHTML=html; el.className='result show';
+  el.scrollIntoView({behavior:'smooth'});
+}
+load();
+</script>
+</body>
+</html>

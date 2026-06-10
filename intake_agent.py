@@ -17,6 +17,22 @@ import requests as _requests
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
+import threading as _threading
+
+# ── LLM usage / cost metering (read by the observability layer) ───────────────
+_usage_lock = _threading.Lock()
+_usage = {"calls": 0, "input_tokens": 0, "output_tokens": 0}
+
+def get_usage() -> dict:
+    """Cumulative Claude token usage since the last reset."""
+    with _usage_lock:
+        return dict(_usage)
+
+def reset_usage():
+    with _usage_lock:
+        _usage.update({"calls": 0, "input_tokens": 0, "output_tokens": 0})
+
+
 def _call_claude(content, max_tokens=2000):
     api_key = os.environ["ANTHROPIC_API_KEY"]
     resp = _requests.post(
@@ -34,7 +50,13 @@ def _call_claude(content, max_tokens=2000):
         timeout=120,
     )
     resp.raise_for_status()
-    return resp.json()["content"][0]["text"]
+    data = resp.json()
+    u = data.get("usage", {}) or {}
+    with _usage_lock:
+        _usage["calls"] += 1
+        _usage["input_tokens"] += int(u.get("input_tokens", 0) or 0)
+        _usage["output_tokens"] += int(u.get("output_tokens", 0) or 0)
+    return data["content"][0]["text"]
 
 GMAIL_USER = os.environ.get("GMAIL_USER", "")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "").replace(" ", "")

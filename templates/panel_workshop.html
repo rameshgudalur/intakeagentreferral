@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Workshop — Design, Demo &amp; Deployment | Coastal DME Intake Agent</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }
+
+  /* NAV */
+  .top-nav { position: fixed; top: 0; left: 0; right: 0; height: 54px; background: #1e3a5f; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.18); }
+  .nav-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-size: 15px; font-weight: 700; text-decoration: none; }
+  .nav-icon { width: 32px; height: 32px; background: rgba(255,255,255,.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .nav-back { color: rgba(255,255,255,.7); font-size: 13px; text-decoration: none; font-weight: 600; }
+  .nav-back:hover { color: #fff; }
+
+  .page { max-width: 1000px; margin: 0 auto; padding: 82px 24px 56px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 12px; border-radius: 99px; background: rgba(59,130,246,.1); color: #2563eb; border: 1px solid rgba(59,130,246,.25); margin-bottom: 14px; }
+  h1 { font-size: clamp(20px, 2.8vw, 32px); font-weight: 800; color: #0f172a; line-height: 1.2; letter-spacing: -.02em; margin-bottom: 10px; }
+  .sub { font-size: 15px; color: #64748b; line-height: 1.6; margin-bottom: 28px; max-width: 760px; }
+
+  /* META STRIP */
+  .meta-strip { display: flex; gap: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+  .meta { flex: 1; padding: 16px 18px; border-right: 1px solid #e2e8f0; text-align: center; }
+  .meta:last-child { border-right: none; }
+  .meta-n { font-size: 22px; font-weight: 800; color: #1e3a5f; letter-spacing: -.02em; }
+  .meta-l { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #94a3b8; margin-top: 3px; }
+
+  .section-label { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #94a3b8; margin: 38px 0 16px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+  /* CONFIDENCE PILLARS */
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+  .pillar { padding: 26px 22px; border-right: 1px solid #e2e8f0; background: #fff; }
+  .pillar:last-child { border-right: none; }
+  .pillar-num { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+  .p1 .pillar-num { color: #3b82f6; } .p2 .pillar-num { color: #8b5cf6; } .p3 .pillar-num { color: #22c55e; }
+  .pillar-icon { font-size: 26px; margin-bottom: 10px; }
+  .pillar-title { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 8px; line-height: 1.3; }
+  .pillar-desc { font-size: 13px; color: #64748b; line-height: 1.6; }
+
+  /* AGENDA TIMELINE */
+  .agenda { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 10px 22px; }
+  .ag-row { display: grid; grid-template-columns: 96px 1fr; gap: 18px; padding: 16px 0; border-bottom: 1px dashed #e2e8f0; align-items: flex-start; }
+  .ag-row:last-child { border-bottom: none; }
+  .ag-time { font-size: 12px; font-weight: 800; color: #1e3a5f; padding-top: 2px; letter-spacing: .01em; }
+  .ag-time span { display: block; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+  .ag-main { display: flex; flex-direction: column; gap: 4px; }
+  .ag-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .ag-ic { font-size: 17px; }
+  .ag-title { font-size: 14px; font-weight: 800; color: #0f172a; }
+  .ag-goal { font-size: 12.5px; color: #64748b; line-height: 1.55; }
+  .ag-link { font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; text-decoration: none; padding: 2px 9px; border-radius: 99px; background: rgba(59,130,246,.08); color: #2563eb; border: 1px solid rgba(59,130,246,.22); }
+  .ag-link:hover { background: rgba(59,130,246,.16); }
+  .ag-break { background: #f1f5f9; color: #94a3b8; }
+  .ag-break .ag-title { color: #64748b; font-weight: 700; }
+
+  /* PROPS / TOUCH & FEEL */
+  .props-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .prop { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 16px; display: flex; flex-direction: column; gap: 6px; border-left: 4px solid #f59e0b; }
+  .prop-ic { font-size: 24px; line-height: 1; }
+  .prop-h { font-size: 13.5px; font-weight: 800; color: #0f172a; line-height: 1.3; }
+  .prop-d { font-size: 12px; color: #64748b; line-height: 1.55; flex: 1; }
+  .prop-tag { font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #b45309; background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); padding: 2px 9px; border-radius: 99px; width: fit-content; margin-top: 2px; }
+  .ag-badge { font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; background: rgba(245,158,11,.12); color: #b45309; border: 1px solid rgba(245,158,11,.3); }
+
+  /* CONSIDERATIONS GRID */
+  .cons-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cons { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 16px 14px; border-top: 3px solid #cbd5e1; }
+  .cons.k-rose { border-top-color: #f43f5e; } .cons.k-blue { border-top-color: #3b82f6; } .cons.k-teal { border-top-color: #14b8a6; }
+  .cons.k-amber { border-top-color: #f59e0b; } .cons.k-purple { border-top-color: #8b5cf6; } .cons.k-green { border-top-color: #22c55e; }
+  .cons-h { font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 8px; display: flex; align-items: center; gap: 7px; }
+  .cons ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .cons li { font-size: 11.5px; color: #475569; line-height: 1.45; display: flex; gap: 7px; }
+  .cons li::before { content: '\2713'; color: #22c55e; font-weight: 800; flex-shrink: 0; }
+
+  /* ROADMAP TIMELINE */
+  .timeline-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 28px 24px 24px; }
+  .timeline-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 22px; }
+  .timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; position: relative; }
+  .timeline::before { content: ''; position: absolute; top: 20px; left: 8%; right: 8%; height: 2px; background: linear-gradient(to right, #1e3a5f, #3b82f6, #8b5cf6, #14b8a6, #22c55e); z-index: 0; }
+  .tl-item { text-align: center; position: relative; z-index: 1; padding: 0 4px; }
+  .tl-dot { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; margin: 0 auto 12px; }
+  .tl-item:nth-child(1) .tl-dot { background: #1e3a5f; } .tl-item:nth-child(2) .tl-dot { background: #3b82f6; }
+  .tl-item:nth-child(3) .tl-dot { background: #8b5cf6; } .tl-item:nth-child(4) .tl-dot { background: #14b8a6; }
+  .tl-item:nth-child(5) .tl-dot { background: #22c55e; }
+  .tl-weeks { font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
+  .tl-label { font-size: 12.5px; font-weight: 800; color: #0f172a; margin-bottom: 6px; line-height: 1.3; }
+  .tl-items { font-size: 11px; color: #64748b; line-height: 1.55; }
+
+  /* SUCCESS CRITERIA */
+  .kpis { display: flex; flex-wrap: wrap; gap: 10px; }
+  .kpi { background: #fff; border: 1px solid #e2e8f0; border-radius: 99px; padding: 9px 16px; font-size: 12.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 8px; }
+  .kpi b { color: #1e3a5f; }
+
+  /* CTA */
+  .cta-box { margin-top: 38px; background: linear-gradient(135deg, #1e3a5f, #1e40af); border-radius: 14px; padding: 28px 32px; display: flex; align-items: center; gap: 24px; color: #fff; }
+  .cta-text h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .cta-text p { font-size: 13px; color: rgba(255,255,255,.78); line-height: 1.5; }
+  .cta-btn { flex-shrink: 0; background: #fff; color: #1e3a5f; border: none; border-radius: 10px; padding: 12px 24px; font-size: 13px; font-weight: 800; cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .cta-btn:hover { background: #e0f2fe; }
+
+  @media (max-width: 760px) {
+    .pillars { grid-template-columns: 1fr; } .pillar { border-right: none; border-bottom: 1px solid #e2e8f0; }
+    .cons-grid { grid-template-columns: 1fr; }
+    .props-grid { grid-template-columns: 1fr; }
+    .meta-strip { flex-wrap: wrap; } .meta { flex: 1 1 50%; border-bottom: 1px solid #e2e8f0; }
+    .timeline { grid-template-columns: 1fr 1fr; } .timeline::before { display: none; }
+    .ag-row { grid-template-columns: 76px 1fr; gap: 12px; }
+    .cta-box { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a class="nav-brand" href="/hub"><div class="nav-icon">&#x1F4CB;</div>Coastal DME</a>
+  <a class="nav-back" href="/hub">&larr; Back to Hub</a>
+</nav>
+
+<div class="page">
+  <div class="tag">Client Workshop</div>
+  <h1>Design &rarr; Demo &rarr; Deploy: The One-Day Client Workshop</h1>
+  <p class="sub">A single, well-paced day that takes your team from a live demonstration to a de-risked deployment plan &mdash; engineered to leave the room confident that the <strong>design is sound</strong>, the <strong>demo is real</strong>, and the <strong>rollout is feasible</strong>. Run as a <strong>hands-on, touch-and-feel experience</strong> &mdash; posters and printed packets to gather around, rule cards to sort, and a live lab where the room runs the agent and watches us build &amp; deploy a change on the spot. Not a slideshow.</p>
+
+  <!-- META STRIP -->
+  <div class="meta-strip">
+    <div class="meta"><div class="meta-n">Jun 10</div><div class="meta-l">Workshop Day</div></div>
+    <div class="meta"><div class="meta-n">1 Day</div><div class="meta-l">9:00 &ndash; 4:30</div></div>
+    <div class="meta"><div class="meta-n">11</div><div class="meta-l">Working Sessions</div></div>
+    <div class="meta"><div class="meta-n">8&ndash;12 wk</div><div class="meta-l">To Go-Live</div></div>
+    <div class="meta"><div class="meta-n">$0.032</div><div class="meta-l">Per Referral</div></div>
+  </div>
+
+  <!-- CONFIDENCE PILLARS -->
+  <div class="section-label">What This Workshop Proves</div>
+  <div class="pillars">
+    <div class="pillar p1">
+      <div class="pillar-num">01 &mdash; Design</div>
+      <div class="pillar-icon">&#x1F9E9;</div>
+      <div class="pillar-title">The design is sound</div>
+      <div class="pillar-desc">A modular agent + OWL knowledge-graph architecture with human-in-the-loop at every flagged exception &mdash; auditable by construction, not by promise.</div>
+    </div>
+    <div class="pillar p2">
+      <div class="pillar-num">02 &mdash; Demo</div>
+      <div class="pillar-icon">&#x1F916;</div>
+      <div class="pillar-title">The demo is real</div>
+      <div class="pillar-desc">Live processing of real referral PDFs by a real Claude agent &mdash; extraction, ICD conflict resolution, gap detection, outreach &mdash; on your representative data.</div>
+    </div>
+    <div class="pillar p3">
+      <div class="pillar-num">03 &mdash; Deploy</div>
+      <div class="pillar-icon">&#x1F680;</div>
+      <div class="pillar-title">The rollout is feasible</div>
+      <div class="pillar-desc">A concrete 8&ndash;12 week path into your environment &mdash; HIPAA/BAA, integration, shadow-mode pilot, then go-live, with owners and dates agreed in the room.</div>
+    </div>
+  </div>
+
+  <!-- TOUCH & FEEL -->
+  <div class="section-label">Make It Tangible &mdash; Touch, Feel, Try</div>
+  <div class="props-grid">
+    <div class="prop">
+      <div class="prop-ic">&#x1F5BC;&#xFE0F;</div>
+      <div class="prop-h">Poster Walls, Not Slides</div>
+      <div class="prop-d">Architecture, the 8-agent value chain, the deployment timeline &mdash; printed large on foam boards. The room gathers, points, and annotates with sticky notes. A gallery walk, not a deck.</div>
+      <div class="prop-tag">Gallery Walk</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ic">&#x1F4C4;</div>
+      <div class="prop-h">Printed Referral Packets</div>
+      <div class="prop-d">Hand out the actual fax/referral packets. Attendees mark them up by hand &mdash; then watch the agent process the very same packet live. Paper &rarr; pixels in real time.</div>
+      <div class="prop-tag">Paper &rarr; Pixels</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ic">&#x1F0CF;</div>
+      <div class="prop-h">Knowledge-Graph Rule Cards</div>
+      <div class="prop-d">The 24 CMS compliance rules as physical cards. Teams sort and inspect them, then see the same rules fire deterministically inside the agent. Makes &ldquo;auditable&rdquo; tactile.</div>
+      <div class="prop-tag">Card Sort</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ic">&#x1F9EA;</div>
+      <div class="prop-h">Live Lab &mdash; Run It Yourself</div>
+      <div class="prop-d">Stations (laptops + the Railway URL on their own phones via QR). Attendees feed in a referral, try to &ldquo;stump the agent,&rdquo; and watch the escalation gate catch edge cases. Trust earned by trying.</div>
+      <div class="prop-tag">Hands-On</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ic">&#x1F6E0;&#xFE0F;</div>
+      <div class="prop-h">Build-It-Live With Us</div>
+      <div class="prop-d">Watch a new payer rule or tweak get made and pushed &mdash; live in the room &mdash; and appear on the public site minutes later. The edit &rarr; push &rarr; deploy loop, in front of their eyes.</div>
+      <div class="prop-tag">Live Build</div>
+    </div>
+    <div class="prop">
+      <div class="prop-ic">&#x1F4CB;</div>
+      <div class="prop-h">Fill the Episode Record</div>
+      <div class="prop-d">A printed 25-field episode-record card. Teams fill it by hand against a packet&hellip; then race the agent&rsquo;s auto-fill. The time-and-effort gap becomes something they feel, not a stat on a slide.</div>
+      <div class="prop-tag">Try It Yourself</div>
+    </div>
+  </div>
+
+  <!-- AGENDA -->
+  <div class="section-label">The Day, Hour by Hour</div>
+  <div class="agenda">
+
+    <div class="ag-row">
+      <div class="ag-time">9:00<span>30 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x1F44B;</span><span class="ag-title">Welcome &amp; Objectives</span></div>
+        <div class="ag-goal">Frame the problem, agree what &ldquo;good&rdquo; looks like, and set the decisions we want to walk out with. Establish a shared definition of success.</div>
+      </div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">9:30<span>45 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x25B6;&#xFE0F;</span><span class="ag-title">Live Demonstration</span><a class="ag-link" href="/demo">Open Demo</a><span class="ag-badge">&#x1F9EA; Live Lab</span></div>
+        <div class="ag-goal">The centerpiece &mdash; watch the agent process real referrals end-to-end. This is the &ldquo;is it real?&rdquo; moment, answered on screen.</div>
+      </div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">10:15<span>30 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x1F9E9;</span><span class="ag-title">How It Works &mdash; Architecture &amp; Workflow</span><a class="ag-link" href="/panel/workflow">Workflow</a></div>
+        <div class="ag-goal">Open the hood: multi-channel intake, AI extraction, the OWL rule engine, completeness checks and routing. Establishes the design is principled.</div>
+      </div>
+    </div>
+
+    <div class="ag-row ag-break">
+      <div class="ag-time">10:45<span>15 min</span></div>
+      <div class="ag-main"><div class="ag-head"><span class="ag-ic">&#x2615;</span><span class="ag-title">Break</span></div></div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">11:00<span>40 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x1F6E1;&#xFE0F;</span><span class="ag-title">Trust &amp; Human-in-the-Loop</span><a class="ag-link" href="/panel/observe">Observability</a></div>
+        <div class="ag-goal">Four-layer hallucination defense, confidence thresholds, the escalation/review queue, and the full audit trail. Directly answers &ldquo;can we trust it?&rdquo;</div>
+      </div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">11:40<span>40 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x1F50C;</span><span class="ag-title">Integration &amp; Knowledge Graph</span><a class="ag-link" href="/panel/integration">Integration</a><span class="ag-badge">&#x1F0CF; Card Sort</span></div>
+        <div class="ag-goal">How agents connect to fax, voice, intake portals and case-management/EHR &mdash; API, RPA or file. No rip-and-replace. Carrier rules in the KG.</div>
+      </div>
+    </div>
+
+    <div class="ag-row ag-break">
+      <div class="ag-time">12:20<span>50 min</span></div>
+      <div class="ag-main"><div class="ag-head"><span class="ag-ic">&#x1F374;</span><span class="ag-title">Lunch</span></div></div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">1:10<span>40 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x1F3E2;</span><span class="ag-title">Security, Compliance &amp; Enterprise Readiness</span><a class="ag-link" href="/panel/enterprise">Enterprise</a></div>
+        <div class="ag-goal">PHI boundaries, HIPAA, BAA, access control, audit logging, retention &mdash; every question a technology leader asks before saying yes. Clears the #1 blocker.</div>
+      </div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">1:50<span>40 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x1F4B0;</span><span class="ag-title">The Business Case &amp; ROI</span><a class="ag-link" href="/panel/economics">Economics</a></div>
+        <div class="ag-goal">Real token economics &mdash; $0.032/referral at scale &mdash; vs. time saved and throughput. Turns &ldquo;impressive&rdquo; into &ldquo;justified.&rdquo;</div>
+      </div>
+    </div>
+
+    <div class="ag-row ag-break">
+      <div class="ag-time">2:30<span>15 min</span></div>
+      <div class="ag-main"><div class="ag-head"><span class="ag-ic">&#x2615;</span><span class="ag-title">Break</span></div></div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">2:45<span>40 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x1F680;</span><span class="ag-title">Deployment &amp; Rollout Plan</span><a class="ag-link" href="/panel/deploy">Deployment</a><span class="ag-badge">&#x1F6E0;&#xFE0F; Build Live</span></div>
+        <div class="ag-goal">Environments, the 8&ndash;12 week timeline, shadow-mode pilot, and how the agent gets smarter with your data. Makes the path concrete.</div>
+      </div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">3:25<span>30 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x1F517;</span><span class="ag-title">Roadmap &amp; Agent Ecosystem</span><a class="ag-link" href="/panel/ecosystem">Ecosystem</a></div>
+        <div class="ag-goal">Beyond intake: the 8-agent value chain &mdash; scheduling next. Shows this is a platform, not a point solution.</div>
+      </div>
+    </div>
+
+    <div class="ag-row">
+      <div class="ag-time">3:55<span>35 min</span></div>
+      <div class="ag-main">
+        <div class="ag-head"><span class="ag-ic">&#x2705;</span><span class="ag-title">Decisions, Owners &amp; Next Steps</span></div>
+        <div class="ag-goal">Lock pilot scope, success metrics, owners and dates. Everyone leaves with a commitment, not just a good impression.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CONSIDERATIONS -->
+  <div class="section-label">Every Consideration, Covered</div>
+  <div class="cons-grid">
+    <div class="cons k-rose">
+      <div class="cons-h"><span>&#x1F512;</span>Security &amp; Compliance</div>
+      <ul><li>PHI handling &amp; data boundary</li><li>HIPAA + signed BAA</li><li>Encryption, access control, audit logs</li><li>Data retention policy</li></ul>
+    </div>
+    <div class="cons k-purple">
+      <div class="cons-h"><span>&#x1F6E1;&#xFE0F;</span>Trust &amp; Quality</div>
+      <ul><li>Accuracy targets &amp; confidence gates</li><li>Human-in-the-loop review queue</li><li>Four-layer hallucination defense</li><li>Failure &amp; fallback handling</li></ul>
+    </div>
+    <div class="cons k-blue">
+      <div class="cons-h"><span>&#x1F50C;</span>Integration</div>
+      <ul><li>Fax / voice / portal intake</li><li>EHR &amp; case-management output</li><li>API, RPA or file-based</li><li>Auth, rate limits, no rip-and-replace</li></ul>
+    </div>
+    <div class="cons k-teal">
+      <div class="cons-h"><span>&#x1F4CA;</span>Operations</div>
+      <ul><li>Monitoring &amp; observability</li><li>SLAs &amp; on-call ownership</li><li>Runbooks &amp; handoff</li><li>Throughput at scale</li></ul>
+    </div>
+    <div class="cons k-green">
+      <div class="cons-h"><span>&#x1F4B0;</span>Commercials</div>
+      <ul><li>Pricing model</li><li>ROI baseline &amp; volume assumptions</li><li>API / token cost</li><li>Pilot vs. production terms</li></ul>
+    </div>
+    <div class="cons k-amber">
+      <div class="cons-h"><span>&#x1F465;</span>Change Management</div>
+      <ul><li>Staff training</li><li>Parallel-run period</li><li>Manual fallback path</li><li>Adoption &amp; comms plan</li></ul>
+    </div>
+  </div>
+
+  <!-- ROADMAP -->
+  <div class="section-label">From Workshop to Go-Live</div>
+  <div class="timeline-box">
+    <div class="timeline-title">Implementation Roadmap &mdash; anchored to the June 10 workshop</div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot">&#x1F4CB;</div>
+        <div class="tl-weeks">Jun 10</div>
+        <div class="tl-label">Workshop &amp; Align</div>
+        <div class="tl-items">Demo + decisions<br>Pilot scope locked<br>Security review kicked off</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot">1</div>
+        <div class="tl-weeks">Weeks 1&ndash;2</div>
+        <div class="tl-label">Integration Discovery</div>
+        <div class="tl-items">Fax/portal mapping<br>Case-mgmt API review<br>PHI boundary design<br>Payer-rule inventory</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot">2</div>
+        <div class="tl-weeks">Weeks 3&ndash;5</div>
+        <div class="tl-label">Environment Setup</div>
+        <div class="tl-items">Infra provisioning<br>API connectivity<br>BAA + HIPAA config<br>KG rule customization</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot">3</div>
+        <div class="tl-weeks">Weeks 6&ndash;8</div>
+        <div class="tl-label">Test &amp; Validate</div>
+        <div class="tl-items">Real referral testing<br>ICD accuracy review<br>Escalation tuning<br>Staff training</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot">4</div>
+        <div class="tl-weeks">Weeks 9&ndash;12</div>
+        <div class="tl-label">Pilot &amp; Go-Live</div>
+        <div class="tl-items">Shadow-mode pilot<br>Live processing<br>Monitoring + SLAs<br>Handoff + runbooks</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS CRITERIA -->
+  <div class="section-label">Success Criteria We&rsquo;ll Agree On</div>
+  <div class="kpis">
+    <div class="kpi">&#x1F916; <b>% auto-processed</b> without human touch</div>
+    <div class="kpi">&#x23F1;&#xFE0F; <b>Handling time</b> reduced</div>
+    <div class="kpi">&#x1F3AF; <b>Extraction accuracy</b> %</div>
+    <div class="kpi">&#x26A1; <b>Time-to-first-response</b></div>
+    <div class="kpi">&#x1F4B5; <b>Cost per referral</b></div>
+    <div class="kpi">&#x1F4C8; <b>Throughput</b> at peak</div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <div class="cta-text">
+      <h3>Walk in with a demo. Walk out with a deployment plan.</h3>
+      <p>We can run a 48-hour proof-of-concept on a sample of your actual intake packages ahead of the workshop &mdash; no integration required, no PHI shared &mdash; so June 10 starts from your data, not ours.</p>
+    </div>
+    <a class="cta-btn" href="/demo">Launch Demo &rarr;</a>
+  </div>
+</div>
+</body>
+</html>

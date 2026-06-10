@@ -8,7 +8,8 @@ print(f"Key loaded: {key[:8]}..." if key else "ERROR: Key not found")
 
 def get(endpoint):
     req = urllib.request.Request(f"https://api.vapi.ai/{endpoint}",
-                                  headers={"Authorization": f"Bearer {key}"})
+                                  headers={"Authorization": f"Bearer {key}",
+                                           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"})
     res = urllib.request.urlopen(req)
     return json.loads(res.read())
 

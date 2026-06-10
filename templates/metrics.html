@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Observability — Coastal DME Intake Agent</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }
+  .top-nav { position: fixed; top: 0; left: 0; right: 0; height: 54px; background: #1e3a5f; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.18); }
+  .nav-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-size: 15px; font-weight: 700; text-decoration: none; }
+  .nav-icon { width: 32px; height: 32px; background: rgba(255,255,255,.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .nav-back { color: rgba(255,255,255,.7); font-size: 13px; text-decoration: none; font-weight: 600; }
+  .nav-back:hover { color: #fff; }
+  .page { max-width: 1080px; margin: 0 auto; padding: 78px 24px 48px; }
+
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 12px; border-radius: 99px; background: rgba(20,184,166,.1); color: #0f766e; border: 1px solid rgba(20,184,166,.25); margin-bottom: 12px; }
+  h1 { font-size: clamp(20px, 2.6vw, 30px); font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin-bottom: 6px; }
+  .sub { font-size: 14px; color: #64748b; margin-bottom: 8px; }
+  .status-line { font-size: 12px; color: #94a3b8; margin-bottom: 22px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,.15); }
+  .dot.idle { background: #94a3b8; box-shadow: 0 0 0 4px rgba(148,163,184,.15); }
+
+  .seclabel { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #94a3b8; margin: 24px 0 12px; display: flex; align-items: center; gap: 10px; }
+  .seclabel::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 16px; border-top: 3px solid #14b8a6; }
+  .kpi.blue { border-top-color: #3b82f6; } .kpi.green { border-top-color: #22c55e; } .kpi.amber { border-top-color: #f59e0b; }
+  .kpi.purple { border-top-color: #8b5cf6; } .kpi.rose { border-top-color: #f43f5e; } .kpi.navy { border-top-color: #1e3a5f; }
+  .kpi .l { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #94a3b8; }
+  .kpi .v { font-size: 28px; font-weight: 800; color: #0f172a; letter-spacing: -.03em; margin-top: 4px; line-height: 1; }
+  .kpi .u { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+  .row2 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; }
+  .card h3 { font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 12px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .bar-row .bl { font-size: 12px; font-weight: 700; width: 84px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 16px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 8px; transition: width .4s; }
+  .bar-row .bn { font-size: 12px; font-weight: 800; color: #0f172a; width: 34px; text-align: right; }
+  .c-val { color: #16a34a; } .c-flag { color: #d97706; } .c-rej { color: #e11d48; } .c-esc { color: #7c3aed; }
+  .f-val { background: #22c55e; } .f-flag { background: #f59e0b; } .f-rej { background: #f43f5e; } .f-esc { background: #8b5cf6; }
+
+  .log { background: #0f172a; border-radius: 12px; padding: 14px 16px; height: 280px; overflow-y: auto; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .log .e { font-size: 11px; color: #cbd5e1; line-height: 1.7; }
+  .log .e .t { color: #64748b; margin-right: 8px; }
+  .note { font-size: 11px; color: #94a3b8; margin-top: 16px; font-style: italic; }
+  @media (max-width: 800px) { .grid { grid-template-columns: repeat(2,1fr); } .row2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a class="nav-brand" href="/hub"><div class="nav-icon">&#x1F4CB;</div>Coastal DME</a>
+  <a class="nav-back" href="/hub">&larr; Back to Hub</a>
+</nav>
+
+<div class="page">
+  <div class="tag">Observability</div>
+  <h1>Live Observability Dashboard</h1>
+  <p class="sub">Real-time agent telemetry &mdash; throughput, latency, AI quality, knowledge-graph outcomes, errors, and live token cost.</p>
+  <div class="status-line"><span class="dot idle" id="dot"></span><span id="statusText">Loading&hellip;</span></div>
+
+  <div class="seclabel">Throughput &amp; Latency</div>
+  <div class="grid">
+    <div class="kpi blue"><div class="l">Processed</div><div class="v" id="processed">0</div><div class="u" id="processedU">of 0</div></div>
+    <div class="kpi blue"><div class="l">Throughput</div><div class="v" id="tput">0</div><div class="u">referrals / min</div></div>
+    <div class="kpi teal"><div class="l">Avg latency</div><div class="v" id="avgLat">0</div><div class="u">seconds / referral</div></div>
+    <div class="kpi teal"><div class="l">p95 latency</div><div class="v" id="p95Lat">0</div><div class="u">seconds</div></div>
+  </div>
+
+  <div class="seclabel">AI Quality</div>
+  <div class="grid">
+    <div class="kpi green"><div class="l">Auto-route rate</div><div class="v" id="autoRoute">0</div><div class="u">% no human touch</div></div>
+    <div class="kpi purple"><div class="l">Avg confidence</div><div class="v" id="conf">0</div><div class="u">% extraction</div></div>
+    <div class="kpi amber"><div class="l">Escalation rate</div><div class="v" id="escRate">0</div><div class="u" id="escU">0 to human</div></div>
+    <div class="kpi rose"><div class="l">Error rate</div><div class="v" id="errRate">0</div><div class="u" id="errU">0 errors</div></div>
+  </div>
+
+  <div class="seclabel">Cost (Live Token Metering)</div>
+  <div class="grid">
+    <div class="kpi navy"><div class="l">Total cost</div><div class="v" id="cost">$0</div><div class="u" id="calls">0 LLM calls</div></div>
+    <div class="kpi navy"><div class="l">Cost / referral</div><div class="v" id="cpr">$0</div><div class="u">at current run</div></div>
+    <div class="kpi navy"><div class="l">Input tokens</div><div class="v" id="tin">0</div><div class="u">cumulative</div></div>
+    <div class="kpi navy"><div class="l">Output tokens</div><div class="v" id="tout">0</div><div class="u">cumulative</div></div>
+  </div>
+
+  <div class="seclabel">Knowledge-Graph Outcomes &amp; Live Event Log</div>
+  <div class="row2">
+    <div class="card">
+      <h3>KG validation outcomes</h3>
+      <div class="bar-row"><span class="bl c-val">Validated</span><div class="bar-track"><div class="bar-fill f-val" id="fVal" style="width:0%"></div></div><span class="bn" id="nVal">0</span></div>
+      <div class="bar-row"><span class="bl c-flag">Flagged</span><div class="bar-track"><div class="bar-fill f-flag" id="fFlag" style="width:0%"></div></div><span class="bn" id="nFlag">0</span></div>
+      <div class="bar-row"><span class="bl c-rej">Rejected</span><div class="bar-track"><div class="bar-fill f-rej" id="fRej" style="width:0%"></div></div><span class="bn" id="nRej">0</span></div>
+      <div class="bar-row"><span class="bl c-esc">Escalated</span><div class="bar-track"><div class="bar-fill f-esc" id="fEsc" style="width:0%"></div></div><span class="bn" id="nEsc">0</span></div>
+      <div class="note">Deterministic CMS-rule outcomes per episode &mdash; the audit-by-construction layer.</div>
+    </div>
+    <div class="card">
+      <h3>Live agent events</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+  <div class="note">Polls <code>/api/metrics</code> + <code>/api/status</code> every 2s · events also persisted to <code>output/obs_events.jsonl</code> (append-only audit log).</div>
+</div>
+
+<script>
+function fmt(n){ return (n||0).toLocaleString(); }
+async function tick(){
+  try {
+    const m = await (await fetch('/api/metrics')).json();
+    const running = m.status === 'running';
+    document.getElementById('dot').className = 'dot' + (running ? '' : ' idle');
+    document.getElementById('statusText').textContent =
+      (running ? 'RUNNING' : (m.status||'idle').toUpperCase()) + ' · ' + m.processed + '/' + m.total +
+      ' processed · ' + m.queue_depth + ' in queue · ' + m.processing_now + ' processing now';
+    document.getElementById('processed').textContent = m.processed;
+    document.getElementById('processedU').textContent = 'of ' + m.total;
+    document.getElementById('tput').textContent = m.throughput_per_min;
+    document.getElementById('avgLat').textContent = m.latency.avg_s;
+    document.getElementById('p95Lat').textContent = m.latency.p95_s;
+    document.getElementById('autoRoute').textContent = m.ai_quality.auto_route_rate;
+    document.getElementById('conf').textContent = m.ai_quality.avg_confidence;
+    document.getElementById('escRate').textContent = m.ai_quality.escalation_rate;
+    document.getElementById('escU').textContent = m.ai_quality.escalations + ' to human';
+    document.getElementById('errRate').textContent = m.errors.rate;
+    document.getElementById('errU').textContent = m.errors.count + ' error' + (m.errors.count===1?'':'s');
+    document.getElementById('cost').textContent = '$' + m.cost.total_usd;
+    document.getElementById('calls').textContent = m.cost.llm_calls + ' LLM calls';
+    document.getElementById('cpr').textContent = '$' + m.cost.per_referral_usd;
+    document.getElementById('tin').textContent = fmt(m.cost.input_tokens);
+    document.getElementById('tout').textContent = fmt(m.cost.output_tokens);
+    const kg = m.kg, tot = Math.max(kg.validated+kg.flagged+kg.rejected+kg.escalated, 1);
+    const set = (f,n,val)=>{ document.getElementById(f).style.width = (val/tot*100)+'%'; document.getElementById(n).textContent = val; };
+    set('fVal','nVal',kg.validated); set('fFlag','nFlag',kg.flagged); set('fRej','nRej',kg.rejected); set('fEsc','nEsc',kg.escalated);
+  } catch(e) {}
+  try {
+    const st = await (await fetch('/api/status')).json();
+    const ev = (st.events||[]).slice(-25).reverse();
+    document.getElementById('log').innerHTML = ev.map(e =>
+      '<div class="e"><span class="t">'+e.ts+'</span>'+ (e.msg||'').replace(/</g,'&lt;') +'</div>').join('');
+  } catch(e) {}
+}
+tick(); setInterval(tick, 2000);
+</script>
+</body>
+</html>

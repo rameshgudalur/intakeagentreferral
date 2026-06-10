@@ -209,6 +209,7 @@ LINK_MAP = {
     'href="/panel/deploy"'    : 'href="panel_deploy.html"',
     'href="/panel/enterprise"': 'href="panel_enterprise.html"',
     'href="/panel/kg"'        : 'href="panel_kg.html"',
+    'href="/panel/workshop"'  : 'href="panel_workshop.html"',
 }
 
 def fix_links(text):
@@ -228,6 +229,7 @@ panels = [
     "panel_vision", "panel_ecosystem", "panel_integration",
     "panel_workflow", "panel_economics", "panel_observe",
     "panel_deploy", "panel_enterprise", "panel_kg",
+    "panel_workshop",
 ]
 for p in panels:
     src = TMPL / f"{p}.html"

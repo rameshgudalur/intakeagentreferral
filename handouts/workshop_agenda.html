@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Workshop Agenda — Coastal DME Intake Agent</title>
+<style>
+  @page { size: Letter; margin: 13mm 13mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #1e293b; line-height: 1.5; font-size: 12px; background: #fff; }
+  .sheet { max-width: 860px; margin: 0 auto; padding: 24px; }
+
+  /* HEADER */
+  .head { border-bottom: 3px solid #1e3a5f; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .head-l .kicker { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #2563eb; }
+  .head-l h1 { font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin-top: 2px; }
+  .head-l .org { font-size: 12px; color: #64748b; margin-top: 3px; }
+  .head-r { text-align: right; flex-shrink: 0; }
+  .head-r .date { font-size: 18px; font-weight: 800; color: #1e3a5f; }
+  .head-r .date span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
+
+  .lead { font-size: 12.5px; color: #475569; margin-bottom: 14px; }
+  .lead b { color: #0f172a; }
+
+  /* META */
+  .meta { display: flex; gap: 0; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; margin-bottom: 18px; }
+  .meta div { flex: 1; text-align: center; padding: 8px 6px; border-right: 1px solid #e2e8f0; }
+  .meta div:last-child { border-right: none; }
+  .meta b { display: block; font-size: 14px; color: #1e3a5f; font-weight: 800; }
+  .meta span { font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; }
+
+  h2 { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #1e3a5f; margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+
+  /* AGENDA TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  .agenda th { text-align: left; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; padding: 4px 8px; border-bottom: 1px solid #cbd5e1; }
+  .agenda td { padding: 7px 8px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+  .agenda .t { white-space: nowrap; font-weight: 800; color: #1e3a5f; font-size: 11.5px; }
+  .agenda .d { color: #94a3b8; font-size: 10px; }
+  .agenda .s { font-weight: 700; color: #0f172a; }
+  .agenda .g { color: #64748b; font-size: 11px; }
+  .agenda .c { color: #0f766e; font-size: 10px; margin-top: 3px; }
+  .agenda .c b { color: #0f766e; font-weight: 800; letter-spacing: .03em; }
+  .agenda tr.brk td { background: #f8fafc; color: #94a3b8; font-weight: 700; }
+  .pill { display: inline-block; font-size: 8.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 99px; background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; margin-left: 6px; }
+
+  /* TWO-COL */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .block ul { list-style: none; }
+  .block li { font-size: 11px; padding: 3px 0 3px 16px; position: relative; color: #334155; }
+  .block li::before { content: '▪'; position: absolute; left: 2px; color: #2563eb; }
+  .block li b { color: #0f172a; }
+  .props li::before { content: '◆'; color: #d97706; }
+
+  /* ROADMAP */
+  .road { display: flex; gap: 6px; }
+  .road .ph { flex: 1; border: 1px solid #e2e8f0; border-top: 3px solid #3b82f6; border-radius: 6px; padding: 8px 8px; }
+  .road .ph:nth-child(1) { border-top-color: #1e3a5f; }
+  .road .ph:nth-child(3) { border-top-color: #8b5cf6; }
+  .road .ph:nth-child(4) { border-top-color: #14b8a6; }
+  .road .ph:nth-child(5) { border-top-color: #22c55e; }
+  .road .w { font-size: 8.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; }
+  .road .l { font-size: 11px; font-weight: 800; color: #0f172a; margin: 2px 0 4px; }
+  .road .i { font-size: 9.5px; color: #64748b; line-height: 1.45; }
+
+  /* KPI */
+  .kpis { display: flex; flex-wrap: wrap; gap: 6px; }
+  .kpis span { font-size: 10.5px; font-weight: 700; color: #334155; border: 1px solid #cbd5e1; border-radius: 99px; padding: 4px 10px; }
+
+  /* CHECKLIST */
+  .check { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+  .check .grp { font-size: 10px; }
+  .check .grp h3 { font-size: 10px; font-weight: 800; color: #1e3a5f; letter-spacing: .04em; margin-bottom: 3px; }
+  .check .grp div { color: #334155; padding: 2px 0 2px 16px; position: relative; line-height: 1.4; }
+  .check .grp div::before { content: '\2610'; position: absolute; left: 0; color: #94a3b8; font-size: 12px; }
+
+  .foot { margin-top: 18px; border-top: 1px solid #e2e8f0; padding-top: 8px; font-size: 9.5px; color: #94a3b8; display: flex; justify-content: space-between; }
+  .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+  @media print { body { font-size: 11.5px; } .sheet { padding: 0; } a { color: inherit; text-decoration: none; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="head">
+    <div class="head-l">
+      <div class="kicker">Client Workshop &middot; Facilitator Run-Sheet</div>
+      <h1>Design &rarr; Demo &rarr; Deploy</h1>
+      <div class="org">Coastal DME &middot; Workers&rsquo; Comp DME Referral Intelligence</div>
+    </div>
+    <div class="head-r">
+      <div class="date">June 10, 2026<span>Workshop Day</span></div>
+    </div>
+  </div>
+
+  <p class="lead">A single, hands-on day that takes your team from a live demonstration to a de-risked deployment plan &mdash; designed to leave the room confident that the <b>design is sound</b>, the <b>demo is real</b>, and the <b>rollout is feasible</b>. Run as a touch-and-feel experience: posters, printed packets, rule cards, and a live lab &mdash; not a slideshow.</p>
+
+  <div class="meta">
+    <div><b>1 Day</b><span>9:00 &ndash; 4:30</span></div>
+    <div><b>11</b><span>Sessions</span></div>
+    <div><b>6</b><span>Hands-On Props</span></div>
+    <div><b>8&ndash;12 wk</b><span>To Go-Live</span></div>
+    <div><b>$0.032</b><span>Per Referral</span></div>
+  </div>
+
+  <h2>Agenda &mdash; Session, Goal &amp; Collateral</h2>
+  <table class="agenda">
+    <tr><th style="width:78px">Time</th><th>Session &middot; Goal &middot; Collateral</th></tr>
+
+    <tr><td class="t">9:00<div class="d">30 min</div></td><td>
+      <span class="s">&#x1F44B; Welcome &amp; Objectives</span>
+      <div class="g">Frame the problem, agree what &ldquo;good&rdquo; looks like, set the decisions to walk out with.</div>
+      <div class="c"><b>Collateral:</b> printed agenda run-sheet &middot; objectives &amp; &ldquo;what good looks like&rdquo; worksheet &middot; attendee name cards</div>
+    </td></tr>
+
+    <tr><td class="t">9:30<div class="d">45 min</div></td><td>
+      <span class="s">&#x25B6; Live Demonstration</span><span class="pill">&#x1F9EA; Live Lab</span>
+      <div class="g">The centerpiece &mdash; the agent processes real referrals end-to-end. The &ldquo;is it real?&rdquo; moment, answered on screen.</div>
+      <div class="c"><b>Collateral:</b> printed referral packets &middot; QR card to the live demo (Railway URL) &middot; laptop/tablet stations &middot; &ldquo;what you just saw&rdquo; recap card</div>
+    </td></tr>
+
+    <tr><td class="t">10:15<div class="d">30 min</div></td><td>
+      <span class="s">&#x1F9E9; How It Works &mdash; Architecture &amp; Workflow</span>
+      <div class="g">Multi-channel intake, AI extraction, the OWL rule engine, completeness checks and routing.</div>
+      <div class="c"><b>Collateral:</b> architecture + workflow poster (foam board) &middot; data-flow one-pager &middot; 25-field episode-record sample</div>
+    </td></tr>
+
+    <tr class="brk"><td class="t">10:45</td><td>&#x2615; Break (15 min)</td></tr>
+
+    <tr><td class="t">11:00<div class="d">40 min</div></td><td>
+      <span class="s">&#x1F6E1; Trust &amp; Human-in-the-Loop</span>
+      <div class="g">Four-layer hallucination defense, confidence thresholds, escalation/review queue, full audit trail.</div>
+      <div class="c"><b>Collateral:</b> four-layer-defense one-pager &middot; sample audit-trail printout &middot; escalation-queue screenshot card</div>
+    </td></tr>
+
+    <tr><td class="t">11:40<div class="d">40 min</div></td><td>
+      <span class="s">&#x1F50C; Integration &amp; Knowledge Graph</span><span class="pill">&#x1F0CF; Card Sort</span>
+      <div class="g">Connecting to fax, voice, portals and case-management/EHR &mdash; API, RPA or file. No rip-and-replace.</div>
+      <div class="c"><b>Collateral:</b> deck of 24 CMS rule cards &middot; integration-patterns one-pager &middot; knowledge-graph poster</div>
+    </td></tr>
+
+    <tr class="brk"><td class="t">12:20</td><td>&#x1F374; Lunch (50 min)</td></tr>
+
+    <tr><td class="t">1:10<div class="d">40 min</div></td><td>
+      <span class="s">&#x1F3E2; Security, Compliance &amp; Enterprise Readiness</span>
+      <div class="g">PHI boundaries, HIPAA, BAA, access control, audit logging, retention. Clears the #1 blocker.</div>
+      <div class="c"><b>Collateral:</b> HIPAA/PHI checklist &middot; draft BAA summary &middot; security-architecture one-pager</div>
+    </td></tr>
+
+    <tr><td class="t">1:50<div class="d">40 min</div></td><td>
+      <span class="s">&#x1F4B0; The Business Case &amp; ROI</span>
+      <div class="g">Real token economics &mdash; $0.032/referral at scale &mdash; vs. time saved and throughput.</div>
+      <div class="c"><b>Collateral:</b> ROI calculator handout (editable) &middot; token-economics one-pager &middot; cost-per-referral card</div>
+    </td></tr>
+
+    <tr class="brk"><td class="t">2:30</td><td>&#x2615; Break (15 min)</td></tr>
+
+    <tr><td class="t">2:45<div class="d">40 min</div></td><td>
+      <span class="s">&#x1F680; Deployment &amp; Rollout Plan</span><span class="pill">&#x1F6E0; Build Live</span>
+      <div class="g">Environments, the 8&ndash;12 week timeline, shadow-mode pilot, how the agent gets smarter with your data.</div>
+      <div class="c"><b>Collateral:</b> 8&ndash;12 week timeline poster &middot; environment &amp; integration checklist &middot; deployment runbook outline</div>
+    </td></tr>
+
+    <tr><td class="t">3:25<div class="d">30 min</div></td><td>
+      <span class="s">&#x1F517; Roadmap &amp; Agent Ecosystem</span>
+      <div class="g">Beyond intake: the 8-agent value chain &mdash; scheduling next. A platform, not a point solution.</div>
+      <div class="c"><b>Collateral:</b> 8-agent value-chain poster &middot; roadmap one-pager &middot; scheduling-agent teaser card</div>
+    </td></tr>
+
+    <tr><td class="t">3:55<div class="d">35 min</div></td><td>
+      <span class="s">&#x2705; Decisions, Owners &amp; Next Steps</span>
+      <div class="g">Lock pilot scope, success metrics, owners and dates. Leave with commitments, not just impressions.</div>
+      <div class="c"><b>Collateral:</b> decision log &amp; owners (RACI) sheet &middot; pilot-scope sign-off form &middot; success-metrics worksheet</div>
+    </td></tr>
+  </table>
+
+  <div class="cols avoid-break">
+    <div class="block props">
+      <h2>Make It Tangible &mdash; Props</h2>
+      <ul>
+        <li><b>Poster walls, not slides</b> &mdash; architecture &amp; value chain on foam boards; sticky-note gallery walk.</li>
+        <li><b>Printed referral packets</b> &mdash; mark up by hand, then watch the agent process the same one.</li>
+        <li><b>Knowledge-graph rule cards</b> &mdash; sort the 24 CMS rules, then see them fire in the agent.</li>
+        <li><b>Live lab</b> &mdash; run the agent yourself (laptops + QR); &ldquo;stump&rdquo; it, watch the escalation gate.</li>
+        <li><b>Build-it-live</b> &mdash; a rule change pushed live in the room, on the public site minutes later.</li>
+        <li><b>Fill the episode record</b> &mdash; 25 fields by hand vs. the agent&rsquo;s auto-fill. Feel the gap.</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h2>Every Consideration, Covered</h2>
+      <ul>
+        <li><b>Security &amp; compliance</b> &mdash; PHI, HIPAA, signed BAA, encryption, access, audit, retention.</li>
+        <li><b>Trust &amp; quality</b> &mdash; accuracy targets, confidence gates, human review, failure handling.</li>
+        <li><b>Integration</b> &mdash; fax/voice/portal in; EHR &amp; case-mgmt out; API/RPA/file.</li>
+        <li><b>Operations</b> &mdash; monitoring, SLAs, on-call, runbooks, throughput at scale.</li>
+        <li><b>Commercials</b> &mdash; pricing, ROI baseline, token cost, pilot vs. production.</li>
+        <li><b>Change management</b> &mdash; training, parallel-run, manual fallback, adoption plan.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>From Workshop to Go-Live &mdash; Implementation Roadmap</h2>
+  <div class="road avoid-break">
+    <div class="ph"><div class="w">Jun 10</div><div class="l">Workshop &amp; Align</div><div class="i">Demo + decisions; pilot scope locked; security review kicked off.</div></div>
+    <div class="ph"><div class="w">Weeks 1&ndash;2</div><div class="l">Integration Discovery</div><div class="i">Fax/portal mapping; case-mgmt API; PHI boundary; payer-rule inventory.</div></div>
+    <div class="ph"><div class="w">Weeks 3&ndash;5</div><div class="l">Environment Setup</div><div class="i">Infra; API connectivity; BAA + HIPAA config; KG customization.</div></div>
+    <div class="ph"><div class="w">Weeks 6&ndash;8</div><div class="l">Test &amp; Validate</div><div class="i">Real referral testing; ICD accuracy; escalation tuning; training.</div></div>
+    <div class="ph"><div class="w">Weeks 9&ndash;12</div><div class="l">Pilot &amp; Go-Live</div><div class="i">Shadow-mode pilot; live processing; monitoring + SLAs; handoff.</div></div>
+  </div>
+
+  <h2>Materials &amp; Collateral Checklist</h2>
+  <div class="check avoid-break">
+    <div class="grp">
+      <h3>&#x1F5BC; Posters (foam board)</h3>
+      <div>Architecture + technical workflow</div>
+      <div>8-agent value chain</div>
+      <div>Knowledge-graph / rule engine</div>
+      <div>8&ndash;12 week deployment timeline</div>
+    </div>
+    <div class="grp">
+      <h3>&#x1F4C4; Handouts / leave-behinds</h3>
+      <div>This agenda run-sheet</div>
+      <div>Data-flow + four-layer-defense one-pagers</div>
+      <div>HIPAA/PHI checklist + draft BAA summary</div>
+      <div>ROI calculator + token-economics one-pager</div>
+      <div>Roadmap one-pager</div>
+    </div>
+    <div class="grp">
+      <h3>&#x1F0CF; Cards &amp; tactile props</h3>
+      <div>Deck of 24 CMS rule cards</div>
+      <div>Printed referral packets (marked-up set)</div>
+      <div>25-field episode-record cards</div>
+      <div>QR cards to the live demo</div>
+    </div>
+    <div class="grp">
+      <h3>&#x1F4BB; Stations &amp; sign-offs</h3>
+      <div>Laptops/tablets on the live demo</div>
+      <div>Decision log + owners (RACI) sheet</div>
+      <div>Pilot-scope sign-off form</div>
+      <div>Success-metrics worksheet</div>
+    </div>
+  </div>
+
+  <h2>Success Criteria We&rsquo;ll Agree On</h2>
+  <div class="kpis">
+    <span>&#x1F916; % auto-processed without human touch</span>
+    <span>&#x23F1; Handling time reduced</span>
+    <span>&#x1F3AF; Extraction accuracy %</span>
+    <span>&#x26A1; Time-to-first-response</span>
+    <span>&#x1F4B5; Cost per referral</span>
+    <span>&#x1F4C8; Throughput at peak</span>
+  </div>
+
+  <div class="foot">
+    <span>Coastal DME Intake Agent Platform &middot; Live intake line (201) 897-3854 &middot; AI answers 24/7</span>
+    <span>Walk in with a demo. Walk out with a deployment plan.</span>
+  </div>
+
+</div>
+</body>
+</html>

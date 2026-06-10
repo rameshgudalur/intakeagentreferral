@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workshop Slides &amp; Posters — Coastal DME Intake Agent</title>
+<style>
+  @page { size: Letter landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #475569; }
+
+  .slide {
+    position: relative; width: 100%; min-height: 100vh; background: #fff;
+    padding: 40px 56px 52px; display: flex; flex-direction: column;
+    page-break-after: always; break-after: page; overflow: hidden;
+  }
+  .slide:last-child { page-break-after: auto; }
+  @media screen { .slide { max-width: 1100px; min-height: 720px; margin: 18px auto; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.3); } }
+
+  /* slide chrome */
+  .s-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 22px; }
+  .kick { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #2563eb; }
+  .brand { font-size: 12px; font-weight: 700; color: #94a3b8; letter-spacing: .03em; }
+  .s-num { position: absolute; bottom: 18px; right: 56px; font-size: 11px; font-weight: 700; color: #cbd5e1; }
+  .s-foot { position: absolute; bottom: 18px; left: 56px; font-size: 11px; color: #cbd5e1; font-weight: 600; }
+  h2.title { font-size: 34px; font-weight: 800; color: #0f172a; line-height: 1.12; letter-spacing: -.02em; margin-bottom: 6px; }
+  .lede { font-size: 16px; color: #64748b; line-height: 1.5; margin-bottom: 22px; max-width: 900px; }
+  .body { flex: 1; }
+
+  /* big bullets */
+  .points { display: flex; flex-direction: column; gap: 14px; }
+  .points li { list-style: none; font-size: 18px; color: #1e293b; line-height: 1.45; display: flex; gap: 14px; }
+  .points li b { color: #0f172a; }
+  .points li::before { content: ''; flex-shrink: 0; width: 11px; height: 11px; border-radius: 3px; background: #3b82f6; margin-top: 7px; }
+
+  /* numbered steps */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .stp { display: grid; grid-template-columns: 44px 1fr; gap: 16px; align-items: start; }
+  .stp .n { width: 38px; height: 38px; border-radius: 50%; color: #fff; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .stp .h { font-size: 17px; font-weight: 800; color: #0f172a; }
+  .stp .d { font-size: 14px; color: #64748b; line-height: 1.45; }
+  .n1{background:#3b82f6}.n2{background:#8b5cf6}.n3{background:#f59e0b}.n4{background:#22c55e}.n5{background:#14b8a6}.n6{background:#1e3a5f}
+
+  /* card grids */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 18px; border-top: 4px solid #3b82f6; }
+  .card .ci { font-size: 26px; margin-bottom: 8px; }
+  .card .ch { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+  .card .cd { font-size: 13px; color: #64748b; line-height: 1.5; }
+  .card.b{border-top-color:#3b82f6}.card.p{border-top-color:#8b5cf6}.card.a{border-top-color:#f59e0b}
+  .card.g{border-top-color:#22c55e}.card.t{border-top-color:#14b8a6}.card.r{border-top-color:#f43f5e}.card.n{border-top-color:#1e3a5f}
+
+  /* big stats */
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; margin-bottom: 24px; }
+  .stat { text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px 12px; }
+  .stat .n { font-size: 42px; font-weight: 800; color: #1e3a5f; letter-spacing: -.03em; line-height: 1; }
+  .stat .l { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; margin-top: 8px; }
+
+  /* flow row */
+  .flow { display: flex; align-items: stretch; gap: 0; }
+  .fbox { flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 10px; }
+  .fbox .fi { font-size: 24px; } .fbox .ft { font-size: 13px; font-weight: 800; color: #0f172a; margin-top: 6px; } .fbox .fd { font-size: 11px; color: #94a3b8; margin-top: 3px; line-height: 1.4; }
+  .farr { display: flex; align-items: center; padding: 0 6px; color: #cbd5e1; font-size: 20px; font-weight: 700; }
+
+  /* timeline */
+  .tl { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; position: relative; margin-top: 10px; }
+  .tl::before { content:''; position:absolute; top:22px; left:11%; right:11%; height:3px; background:linear-gradient(to right,#3b82f6,#8b5cf6,#14b8a6,#22c55e); }
+  .tli { text-align:center; position:relative; padding:0 8px; }
+  .tld { width:46px;height:46px;border-radius:50%;color:#fff;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px; }
+  .tli:nth-child(1) .tld{background:#3b82f6}.tli:nth-child(2) .tld{background:#8b5cf6}.tli:nth-child(3) .tld{background:#14b8a6}.tli:nth-child(4) .tld{background:#22c55e}
+  .tlw { font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#94a3b8; }
+  .tll { font-size:15px;font-weight:800;color:#0f172a;margin:4px 0 6px; }
+  .tli ul { list-style:none;font-size:12px;color:#64748b;line-height:1.7; }
+
+  /* title slide */
+  .cover { background: linear-gradient(150deg,#1e3a5f 0%, #1e40af 100%); color:#fff; justify-content:center; }
+  .cover .s-top { border-bottom-color: rgba(255,255,255,.2); } .cover .kick{color:#93c5fd} .cover .brand{color:rgba(255,255,255,.6)}
+  .cover h1 { font-size: 56px; font-weight: 800; letter-spacing:-.03em; line-height:1.05; margin-bottom:16px; }
+  .cover .csub { font-size: 20px; color: rgba(255,255,255,.85); line-height:1.5; max-width:760px; }
+  .cover .cmeta { margin-top: 30px; display:flex; gap:30px; }
+  .cover .cmeta div b { font-size:24px;font-weight:800;display:block;color:#fff } .cover .cmeta div span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#93c5fd}
+  .cover .s-foot, .cover .s-num { color: rgba(255,255,255,.5); }
+
+  .callout { background:#1e3a5f; color:#fff; border-radius:12px; padding:18px 22px; font-size:16px; line-height:1.5; }
+  .callout b { color:#fff; }
+  .quote { font-size:18px; font-style:italic; color:#1e3a5f; font-weight:600; border-left:4px solid #3b82f6; padding-left:16px; line-height:1.5; }
+  .mono { font-family:'SF Mono','Fira Code',monospace; font-size:13px; }
+  .pill { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:3px 11px; border-radius:99px; }
+  .pill.live { background:rgba(34,197,94,.12); color:#16a34a; border:1px solid rgba(34,197,94,.3); }
+  .pill.next { background:rgba(139,92,246,.12); color:#7c3aed; border:1px solid rgba(139,92,246,.3); }
+</style>
+</head>
+<body>
+
+<!-- 1 · COVER -->
+<section class="slide cover">
+  <div class="s-top"><span class="kick">Client Workshop</span><span class="brand">June 10, 2026</span></div>
+  <div class="body" style="display:flex;flex-direction:column;justify-content:center">
+    <h1>Design &rarr; Demo &rarr; Deploy</h1>
+    <div class="csub">An AI intake &amp; referral agent for Workers&rsquo; Comp DME &mdash; live today, deployable in your environment in 8&ndash;12 weeks. A hands-on workshop to prove the design, the demo, and the rollout.</div>
+    <div class="cmeta">
+      <div><b>1 Day</b><span>Workshop</span></div>
+      <div><b>Agent 1</b><span>Live Now</span></div>
+      <div><b>$0.032</b><span>Per Referral</span></div>
+      <div><b>24</b><span>CMS Rules</span></div>
+    </div>
+  </div>
+  <div class="s-foot">Coastal DME &middot; Intake Agent Platform</div>
+</section>
+
+<!-- 2 · VISION -->
+<section class="slide">
+  <div class="s-top"><span class="kick">The Opportunity</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Make intake &amp; referral management an advantage</h2>
+  <p class="lede">Today, DME referral intake is manual, slow, and error-prone &mdash; staff rekey faxes, chase missing fields, and miscode claims. The agent turns it into autonomous, clean, route-ready episodes &mdash; with a human in the loop at every flagged exception.</p>
+  <div class="body">
+    <div class="g2">
+      <div class="card r">
+        <div class="ci">&#x1F4C9;</div>
+        <div class="ch">The cost of manual intake</div>
+        <div class="cd">Hours of rekeying per referral &middot; coding errors that trigger denials &middot; missing auth refs that stall episodes &middot; no audit trail &middot; can&rsquo;t scale with volume.</div>
+      </div>
+      <div class="card g">
+        <div class="ch">The agent advantage</div>
+        <div class="cd">Reads every page, extracts 25 fields, validates against CMS rules, chases gaps by email &amp; voice, and routes a clean episode &mdash; in seconds, at $0.032 each, fully audited.</div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:20px"><b>The principle:</b> autonomous where it&rsquo;s confident, human where it isn&rsquo;t. The agent never guesses on a clinical or coding decision &mdash; it escalates.</div>
+  </div>
+  <div class="s-foot">Design &rarr; Demo &rarr; Deploy</div><div class="s-num">2</div>
+</section>
+
+<!-- 3 · DEMO -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Live Demonstration</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">What you&rsquo;ll see &mdash; on real referrals</h2>
+  <p class="lede">Not a mock-up. A real Claude agent processes actual referral PDFs end-to-end, on screen, on your representative data.</p>
+  <div class="body">
+    <div class="flow">
+      <div class="fbox"><div class="fi">&#x1F4E5;</div><div class="ft">Referral arrives</div><div class="fd">Fax, voice or portal</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox"><div class="fi">&#x1F9E0;</div><div class="ft">Extracts 25 fields</div><div class="fd">Reads every page</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox"><div class="fi">&#x2696;&#xFE0F;</div><div class="ft">Resolves ICD conflict</div><div class="fd">Catches miscodes</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox"><div class="fi">&#x1F4DE;</div><div class="ft">Chases the gap</div><div class="fd">Email + voice</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox"><div class="fi">&#x2705;</div><div class="ft">Routes episode</div><div class="fd">Clean &amp; audited</div></div>
+    </div>
+    <div class="g3" style="margin-top:26px">
+      <div class="card b"><div class="ch">Watch for #1</div><div class="cd">The agent flags an ICD conflict (M23.611 vs S83.209A) and explains <i>why</i>, citing the document.</div></div>
+      <div class="card a"><div class="ch">Watch for #2</div><div class="cd">A missing auth ref is caught as a hard block &mdash; the episode is held, outreach is drafted to the adjuster by name.</div></div>
+      <div class="card t"><div class="ch">Try it yourself</div><div class="cd">Scan the QR &rarr; open the live demo on your phone &rarr; run a referral and try to &ldquo;stump the agent.&rdquo;</div></div>
+    </div>
+  </div>
+  <div class="s-foot">Live Lab &middot; stations + QR</div><div class="s-num">3</div>
+</section>
+
+<!-- 4 · ARCHITECTURE OVERVIEW -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Architecture &middot; 1 of 3</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">The big picture &mdash; six layers, one pipeline</h2>
+  <p class="lede">Every referral, regardless of channel, flows through the same six-layer pipeline. AI does the reading and reasoning; a deterministic rule engine does the compliance; a human decides the close calls.</p>
+  <div class="body">
+    <div class="flow">
+      <div class="fbox" style="border-top:4px solid #3b82f6"><div class="fi">&#x1F4E0;</div><div class="ft">Multi-Channel Intake</div><div class="fd">Fax · Voice · Portal</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox" style="border-top:4px solid #8b5cf6"><div class="fi">&#x1F9E0;</div><div class="ft">AI Extraction</div><div class="fd">Large Language Model</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox" style="border-top:4px solid #f59e0b"><div class="fi">&#x1F9E9;</div><div class="ft">OWL Knowledge Graph</div><div class="fd">Deterministic rules</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox" style="border-top:4px solid #22c55e"><div class="fi">&#x2705;</div><div class="ft">Completeness Check</div><div class="fd">Gap classification</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox" style="border-top:4px solid #14b8a6"><div class="fi">&#x1F464;</div><div class="ft">Human Gate</div><div class="fd">&lt;80% confidence</div></div>
+      <div class="farr">&rarr;</div>
+      <div class="fbox" style="border-top:4px solid #1e3a5f"><div class="fi">&#x1F4E4;</div><div class="ft">Route Output</div><div class="fd">Locked + dispatched</div></div>
+    </div>
+    <div class="g2" style="margin-top:26px">
+      <div class="card p"><div class="ch">AI where judgement helps</div><div class="cd">The LLM reads unstructured documents, extracts structured fields, and reasons about conflicting evidence across pages.</div></div>
+      <div class="card a"><div class="ch">Rules where certainty is required</div><div class="cd">Coding compliance is never left to probability &mdash; the knowledge graph confirms or rejects with a CMS citation. Auditable by construction.</div></div>
+    </div>
+  </div>
+  <div class="s-foot">Architecture &amp; Workflow</div><div class="s-num">4</div>
+</section>
+
+<!-- 5 · HOW THE AGENT WORKS (6 STEPS) -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Architecture &middot; 2 of 3</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">How the agent works &mdash; step by step</h2>
+  <div class="body">
+    <div class="steps">
+      <div class="stp"><div class="n n1">1</div><div><div class="h">Channel Intake</div><div class="d">Ingests fax PDFs (counts every page) or answers the live voice line &mdash; 14 fields captured in ~107 seconds. Both channels feed one queue.</div></div></div>
+      <div class="stp"><div class="n n2">2</div><div><div class="h">AI Extraction &mdash; 25 structured fields</div><div class="d">Reads all documents at once: patient, claim, ICD-10, HCPCS, physician NPI, adjuster, address, auth ref. Cross-references documents and scores its own confidence 0&ndash;100%.</div></div></div>
+      <div class="stp"><div class="n n3">3</div><div><div class="h">OWL Knowledge Graph &mdash; 24 CMS rules</div><div class="d">Every code validated against deterministic rules sourced from CMS guidelines. Confirms, rejects, flags or escalates &mdash; each with its citation. Runs in &lt;150 ms.</div></div></div>
+      <div class="stp"><div class="n n4">4</div><div><div class="h">Completeness Check</div><div class="d">Classifies gaps by criticality: hard blocks (auth ref, appt window) hold the episode; required gaps (transport, language) collected in parallel; clean episodes route untouched.</div></div></div>
+      <div class="stp"><div class="n n5">5</div><div><div class="h">Human Review Gate</div><div class="d">Below 80% confidence the agent stops &mdash; routes to a specialist with full reasoning, source docs, one-click approve/override, logged with reviewer identity.</div></div></div>
+      <div class="stp"><div class="n n6">6</div><div><div class="h">Route Output</div><div class="d">Locks the 25-field episode record, saves the full audit trail, triggers vendor dispatch with the right code, equipment and patient.</div></div></div>
+    </div>
+  </div>
+  <div class="s-foot">Architecture &amp; Workflow</div><div class="s-num">5</div>
+</section>
+
+<!-- 6 · CHANNELS + OUTREACH -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Architecture &middot; 3 of 3</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Multi-channel in, autonomous outreach out</h2>
+  <p class="lede">The agent meets referrals where they are &mdash; and chases what&rsquo;s missing without a human lifting a finger.</p>
+  <div class="body">
+    <div class="g3">
+      <div class="card b"><div class="ci">&#x1F4E0;</div><div class="ch">Fax</div><div class="cd">Ingests all PDFs &mdash; referral form, clinical notes, prescription &mdash; and counts every page before forming an opinion.</div></div>
+      <div class="card p"><div class="ci">&#x1F3A4;</div><div class="ch">Voice (inbound)</div><div class="cd">Answers the intake line 24/7, runs a structured conversation, captures 14 fields live &mdash; 107s average.</div></div>
+      <div class="card t"><div class="ci">&#x1F4BB;</div><div class="ch">Portal upload</div><div class="cd">Accepts portal submissions into the same queue &mdash; same process, same output.</div></div>
+    </div>
+    <div class="g2" style="margin-top:22px">
+      <div class="card g"><div class="ci">&#x1F4E7;</div><div class="ch">Email outreach</div><div class="cd">Drafts a specific email to the adjuster <i>by name</i> &mdash; lists exact missing fields, cites the claim number, sets a 24-hour deadline. Logged on send.</div></div>
+      <div class="card a"><div class="ci">&#x1F4DE;</div><div class="ch">Outbound voice call</div><div class="cd">No reply in 24h? The agent calls &mdash; 84 seconds &mdash; confirms auth ref, collects the appointment window, updates the episode from the transcript.</div></div>
+    </div>
+  </div>
+  <div class="s-foot">Architecture &amp; Workflow</div><div class="s-num">6</div>
+</section>
+
+<!-- 7 · TRUST: FOUR-LAYER DEFENSE -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Trust &middot; 1 of 2</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Four-layer defense against hallucination</h2>
+  <p class="lede">The single most important design choice: the agent is built so it cannot quietly guess on a clinical or coding decision.</p>
+  <div class="body">
+    <div class="g4">
+      <div class="card b"><div class="ci">&#x1F4C4;</div><div class="ch">1 · Document cross-reference</div><div class="cd">Compares ICD codes across every document &mdash; mismatches flagged with document-level reasoning.</div></div>
+      <div class="card a"><div class="ci">&#x1F9E9;</div><div class="ch">2 · KG validation</div><div class="cd">Deterministic CMS rules confirm or reject each code &mdash; no probability on coding.</div></div>
+      <div class="card p"><div class="ci">&#x1F4CA;</div><div class="ch">3 · Confidence threshold</div><div class="cd">The agent scores itself 0&ndash;100%. Below 80%, it does not proceed.</div></div>
+      <div class="card t"><div class="ci">&#x1F464;</div><div class="ch">4 · Human gate</div><div class="cd">Low-confidence or conflicting cases route to a specialist for a binding decision.</div></div>
+    </div>
+    <div class="callout" style="margin-top:24px"><b>Status priority &mdash; the guardrail that makes it deployable:</b> REJECTED &gt; ESCALATED &gt; FLAGGED &gt; VALIDATED. The safest outcome always wins &mdash; the agent never marks an episode &ldquo;clean&rdquo; while a live coding concern exists.</div>
+  </div>
+  <div class="s-foot">Trust &amp; Human-in-the-Loop</div><div class="s-num">7</div>
+</section>
+
+<!-- 8 · TRUST: AUDIT -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Trust &middot; 2 of 2</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Every decision is logged &amp; reviewable</h2>
+  <p class="lede">When the agent escalates, the specialist sees <i>why</i> &mdash; not just a flag. When it acts, the reasoning survives audit.</p>
+  <div class="body">
+    <div class="g2">
+      <div class="card t">
+        <div class="ch">The human review queue</div>
+        <div class="cd" style="line-height:1.7">
+          &#x2022; ICD conflicts below 80% &rarr; specialist queue, episode blocked from dispatch<br>
+          &#x2022; Reviewer sees the agent&rsquo;s full reasoning + source documents<br>
+          &#x2022; Approve or override in one click<br>
+          &#x2022; Decision logged with reviewer identity + timestamp
+        </div>
+      </div>
+      <div class="card n">
+        <div class="ch">The audit trail (per episode)</div>
+        <div class="cd" style="line-height:1.7">
+          &#x2022; 25 structured fields + KG validation results<br>
+          &#x2022; Every rule that fired, with CMS citation<br>
+          &#x2022; ICD conflicts and how they were resolved<br>
+          &#x2022; Email body + call transcript<br>
+          &#x2022; Every confidence score, every decision
+        </div>
+      </div>
+    </div>
+    <div class="quote" style="margin-top:22px">&ldquo;When confidence falls below 80%, the agent stops. It doesn&rsquo;t guess on clinical decisions &mdash; it routes to a specialist with the full conflict detail.&rdquo;</div>
+  </div>
+  <div class="s-foot">Trust &amp; Human-in-the-Loop</div><div class="s-num">8</div>
+</section>
+
+<!-- 9 · KG OVERVIEW -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Knowledge Graph &middot; 1 of 3</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">A deterministic rule engine &mdash; cited, not guessed</h2>
+  <p class="lede">24 rules extracted from CMS ICD-10-CM Official Guidelines FY2026 and LCD/NCD documents. Every validation is deterministic, cited, and auditable &mdash; no AI probability on coding decisions.</p>
+  <div class="body">
+    <div class="stats">
+      <div class="stat"><div class="n">24</div><div class="l">Rules</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">Categories</div></div>
+      <div class="stat"><div class="n">100%</div><div class="l">Deterministic</div></div>
+      <div class="stat"><div class="n">&lt;150ms</div><div class="l">Per Episode</div></div>
+    </div>
+    <div class="g2">
+      <div class="card a"><div class="ch">Why OWL, not a flat rule list</div><div class="cd">OWL (W3C Web Ontology Language) enforces class hierarchies, property chains and disjointness &mdash; so the graph stays logically consistent as rules are added. A reasoner can infer new facts automatically.</div></div>
+      <div class="card g"><div class="ch">Built from the source of truth</div><div class="cd">CMS ICD-10-CM FY2026 (144 pages) + LCD L33803 (walkers/rollators) + NCDs &rarr; structured into <span class="mono">rules.json</span>, each rule citing its exact CMS section.</div></div>
+    </div>
+  </div>
+  <div class="s-foot">Integration &amp; Knowledge Graph</div><div class="s-num">9</div>
+</section>
+
+<!-- 10 · KG CATEGORIES -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Knowledge Graph &middot; 2 of 3</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Seven rule domains &middot; four possible actions</h2>
+  <div class="body">
+    <div class="g4" style="margin-bottom:16px">
+      <div class="card b"><div class="ch">Post-Surgical Coding</div><div class="cd"><b>6 rules</b> &mdash; enforce S-codes (injury) over M-codes (degenerative) after surgery.</div></div>
+      <div class="card p"><div class="ch">Pain Classification</div><div class="cd"><b>3 rules</b> &mdash; postprocedural G89.18 vs trauma G89.11; sequencing.</div></div>
+      <div class="card a"><div class="ch">Laterality</div><div class="cd"><b>2 rules</b> &mdash; right/left mismatches across documents; escalate conflicts.</div></div>
+      <div class="card g"><div class="ch">HCPCS Coverage</div><div class="cd"><b>4 rules</b> &mdash; confirm equipment codes covered for the diagnosis.</div></div>
+      <div class="card t"><div class="ch">Equipment Spec</div><div class="cd"><b>2 rules</b> &mdash; bariatric thresholds (E0143 300lb vs E0149 400lb).</div></div>
+      <div class="card r"><div class="ch">Workers Comp</div><div class="cd"><b>3 rules</b> &mdash; required WC fields; reject M-codes as primary on injury claims.</div></div>
+      <div class="card n"><div class="ch">Authorization / Docs</div><div class="cd"><b>4 rules</b> &mdash; missing auth ref; 5-element medical-necessity check.</div></div>
+      <div class="card" style="border-top-color:#64748b"><div class="ch">Every rule cites CMS</div><div class="cd">e.g. <span class="mono">§I.C.19.a</span>, <span class="mono">LCD L33803</span> &mdash; traceable to source.</div></div>
+    </div>
+    <div class="g4">
+      <div class="card g"><div class="ch" style="color:#16a34a">CONFIRM</div><div class="cd">Code validated &mdash; contributes to VALIDATED status.</div></div>
+      <div class="card r"><div class="ch" style="color:#e11d48">REJECT</div><div class="cd">Coding error identified &mdash; replacement + source given.</div></div>
+      <div class="card a"><div class="ch" style="color:#d97706">FLAG</div><div class="cd">Concern needs review &mdash; may not block dispatch.</div></div>
+      <div class="card p"><div class="ch" style="color:#7c3aed">ESCALATE</div><div class="cd">Conflicting evidence &mdash; human decision required.</div></div>
+    </div>
+  </div>
+  <div class="s-foot">Integration &amp; Knowledge Graph</div><div class="s-num">10</div>
+</section>
+
+<!-- 11 · KG IN ACTION -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Knowledge Graph &middot; 3 of 3</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Live example &mdash; the Holloway referral</h2>
+  <p class="lede">James Holloway &middot; ACL reconstruction &middot; E0143 rollator &middot; 285 lbs. The KG ran 24 rules in &lt;100 ms &mdash; 5 fired.</p>
+  <div class="body">
+    <div class="steps">
+      <div class="stp"><div class="n" style="background:#f43f5e">&#x2715;</div><div><div class="h">DME-ICD-001 &mdash; REJECT</div><div class="d">M23.611 (degenerative) on a post-surgical episode. Replace with S83.209A. Source §I.C.19.a.</div></div></div>
+      <div class="stp"><div class="n" style="background:#22c55e">&#x2713;</div><div><div class="h">DME-ICD-002 &mdash; CONFIRM</div><div class="d">S83.209A correct post-ACL encounter code (7th char &lsquo;A&rsquo;). Confidence 100%.</div></div></div>
+      <div class="stp"><div class="n" style="background:#22c55e">&#x2713;</div><div><div class="h">DME-ICD-007 &mdash; CONFIRM</div><div class="d">E0143 rollator covered for S83.209A per LCD L33803.</div></div></div>
+      <div class="stp"><div class="n" style="background:#f59e0b">&#x2691;</div><div><div class="h">DME-ICD-023 &mdash; FLAG</div><div class="d">285 lbs &mdash; within 15 lbs of the 300 lb limit. Confirm bariatric spec before dispatch. Catches a costly wrong-equipment return.</div></div></div>
+      <div class="stp"><div class="n" style="background:#f59e0b">&#x2691;</div><div><div class="h">DME-ICD-015 &mdash; FLAG</div><div class="d">WC claim, auth ref blank &mdash; blocks billing. Triggers outreach to adjuster Linda Torres.</div></div></div>
+    </div>
+    <div class="callout" style="margin-top:18px"><b>Final status: FLAGGED</b> &mdash; 1 rejection (resolved by LLM self-correction), 2 confirmations, 2 flags. Full citation trail attached to the route output.</div>
+  </div>
+  <div class="s-foot">Integration &amp; Knowledge Graph</div><div class="s-num">11</div>
+</section>
+
+<!-- 12 · INTEGRATION -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Integration</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Fits your stack &mdash; no rip-and-replace</h2>
+  <p class="lede">The agent connects to what you already run, three ways, and is built to slot into the wider operations chain.</p>
+  <div class="body">
+    <div class="g3">
+      <div class="card b"><div class="ci">&#x1F517;</div><div class="ch">API</div><div class="cd">Direct integration with your case-management / EHR / intake portal where APIs exist.</div></div>
+      <div class="card p"><div class="ci">&#x1F916;</div><div class="ch">RPA</div><div class="cd">Robotic automation drives legacy systems that have no API &mdash; the agent operates the screens.</div></div>
+      <div class="card t"><div class="ci">&#x1F4C1;</div><div class="ch">File</div><div class="cd">Batch file exchange (fax gateway, SFTP drops) for the simplest, lowest-touch start.</div></div>
+    </div>
+    <div class="g2" style="margin-top:22px">
+      <div class="card g"><div class="ch">Connects to</div><div class="cd">Fax gateway &middot; intake portal &middot; case-management system &middot; scheduling &middot; billing &middot; EHR &mdash; inbound and outbound.</div></div>
+      <div class="card a"><div class="ch">Carrier rules live in the graph</div><div class="cd">Payer-specific rules are added to the knowledge graph as config &mdash; no code changes to support a new carrier.</div></div>
+    </div>
+  </div>
+  <div class="s-foot">Integration &amp; Knowledge Graph</div><div class="s-num">12</div>
+</section>
+
+<!-- 13 · SECURITY -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Security &amp; Compliance &middot; 1 of 2</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">PHI stays inside your boundary</h2>
+  <p class="lede">Healthcare-grade from day one. This is the question your technology leader asks first &mdash; here is the answer.</p>
+  <div class="body">
+    <div class="g3">
+      <div class="card r"><div class="ci">&#x1F512;</div><div class="ch">HIPAA + BAA</div><div class="cd">HIPAA-compliant deployment. LLM-provider BAA available. PHI never leaves your boundary.</div></div>
+      <div class="card b"><div class="ci">&#x1F6E1;&#xFE0F;</div><div class="ch">Access &amp; audit</div><div class="cd">Role-based access, full audit logging of every decision, configurable data-retention policy.</div></div>
+      <div class="card n"><div class="ci">&#x1F3E2;</div><div class="ch">Your environment</div><div class="cd">Containerized Python &mdash; runs on your infrastructure, your cloud, or ours. You receive source, logs, runbooks.</div></div>
+    </div>
+    <div class="callout" style="margin-top:24px"><b>Bring this to the security review:</b> data-boundary diagram, HIPAA/PHI checklist, draft BAA summary, retention policy &mdash; all on the table at the workshop.</div>
+  </div>
+  <div class="s-foot">Security, Compliance &amp; Enterprise Readiness</div><div class="s-num">13</div>
+</section>
+
+<!-- 14 · ENTERPRISE -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Security &amp; Compliance &middot; 2 of 2</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Enterprise-ready operations</h2>
+  <p class="lede">Everything a technology leader needs to say yes &mdash; and to run it confidently after go-live.</p>
+  <div class="body">
+    <div class="g4">
+      <div class="card b"><div class="ci">&#x1F4CA;</div><div class="ch">Monitoring</div><div class="cd">Live system health, AI quality metrics, throughput &amp; cost dashboards.</div></div>
+      <div class="card t"><div class="ci">&#x1F4DE;</div><div class="ch">Support</div><div class="cd">Dedicated support through pilot and go-live; runbooks for your team.</div></div>
+      <div class="card g"><div class="ci">&#x1F4C8;</div><div class="ch">Scales</div><div class="cd">Demonstrated 40 &rarr; 1,000 &rarr; 3M referrals on the same architecture.</div></div>
+      <div class="card p"><div class="ci">&#x1F501;</div><div class="ch">Improves</div><div class="cd">Learns your payers and patterns; review-queue feedback feeds the next cycle.</div></div>
+    </div>
+    <div class="quote" style="margin-top:24px">&ldquo;Your team receives full source code, audit logs, and runbooks &mdash; with dedicated support through pilot and go-live.&rdquo;</div>
+  </div>
+  <div class="s-foot">Security, Compliance &amp; Enterprise Readiness</div><div class="s-num">14</div>
+</section>
+
+<!-- 15 · ECONOMICS -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Business Case &middot; 1 of 2</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">The economics &mdash; measured, not estimated</h2>
+  <p class="lede">Real token consumption from 40 live referrals, extrapolated to production volume.</p>
+  <div class="body">
+    <div class="stats">
+      <div class="stat"><div class="n">$0.032</div><div class="l">Per Referral</div></div>
+      <div class="stat"><div class="n">40</div><div class="l">Live Referrals Measured</div></div>
+      <div class="stat"><div class="n">1,000</div><div class="l">Extrapolated</div></div>
+      <div class="stat"><div class="n">3M</div><div class="l">At Full Scale</div></div>
+    </div>
+    <div class="g2">
+      <div class="card g"><div class="ch">What drives the cost</div><div class="cd">A few cents of LLM tokens per referral for extraction + reasoning. The knowledge graph runs locally &mdash; no per-call cost, no network round-trip.</div></div>
+      <div class="card b"><div class="ch">Why it stays flat at scale</div><div class="cd">Cost is per-referral and linear &mdash; no per-seat licensing, no overtime, no rekeying. Volume spikes don&rsquo;t spike headcount.</div></div>
+    </div>
+  </div>
+  <div class="s-foot">The Business Case &amp; ROI</div><div class="s-num">15</div>
+</section>
+
+<!-- 16 · ROI -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Business Case &middot; 2 of 2</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">Where the return comes from</h2>
+  <p class="lede">We&rsquo;ll plug your monthly volume into the calculator live &mdash; these are the levers.</p>
+  <div class="body">
+    <div class="g3">
+      <div class="card b"><div class="ci">&#x23F1;&#xFE0F;</div><div class="ch">Time saved</div><div class="cd">Seconds of agent processing replace minutes-to-hours of manual rekeying and gap-chasing per referral.</div></div>
+      <div class="card g"><div class="ci">&#x2705;</div><div class="ch">Fewer denials</div><div class="cd">Coding errors caught before submission &mdash; M-code rejections, missing auth refs &mdash; mean fewer reworks and denials.</div></div>
+      <div class="card t"><div class="ci">&#x1F4C8;</div><div class="ch">Throughput</div><div class="cd">Process peak volume without adding staff; clean episodes route with zero human touch.</div></div>
+    </div>
+    <div class="callout" style="margin-top:24px"><b>The pitch in one line:</b> at $0.032 per referral, the cost of the agent is a rounding error against a single avoided denial or hour of staff time. We&rsquo;ll prove the payback on <i>your</i> numbers.</div>
+  </div>
+  <div class="s-foot">The Business Case &amp; ROI</div><div class="s-num">16</div>
+</section>
+
+<!-- 17 · DEPLOYMENT STORY -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Deployment &middot; 1 of 2</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">What we built &middot; how we deploy &middot; how it improves</h2>
+  <div class="body">
+    <div class="g3">
+      <div class="card b"><div class="ch">01 &mdash; What we built</div><div class="cd" style="line-height:1.7">A modular agent network: AI extraction, OWL knowledge graph (24 CMS rules), four-layer defense, email + voice outreach, full audit trail. <b>75 referrals in 60 seconds at $0.032 each.</b></div></div>
+      <div class="card p"><div class="ch">02 &mdash; How we deploy it</div><div class="cd" style="line-height:1.7">Containerized Python in your environment. API / RPA / file integration &mdash; no rip-and-replace. BAA + HIPAA config. <b>8&ndash;12 weeks from kickoff to go-live.</b></div></div>
+      <div class="card g"><div class="ch">03 &mdash; How it gets smarter</div><div class="cd" style="line-height:1.7">Tunes to your payers and patterns; KG extended with your carrier rules (config, not code); confidence calibrated to your tolerance. <b>Improves from month 3+.</b></div></div>
+    </div>
+    <div class="quote" style="margin-top:24px">&ldquo;We can run a 48-hour proof-of-concept on a sample of your actual intake packages &mdash; no integration required, no PHI shared.&rdquo;</div>
+  </div>
+  <div class="s-foot">Deployment &amp; Rollout</div><div class="s-num">17</div>
+</section>
+
+<!-- 18 · TIMELINE -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Deployment &middot; 2 of 2</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">8&ndash;12 weeks from kickoff to go-live</h2>
+  <p class="lede">A staged, low-risk path &mdash; shadow-mode pilot before anything goes live.</p>
+  <div class="body">
+    <div class="tl">
+      <div class="tli"><div class="tld">1</div><div class="tlw">Weeks 1&ndash;2</div><div class="tll">Integration Discovery</div><ul><li>Fax/portal mapping</li><li>Case-mgmt API review</li><li>PHI boundary design</li><li>Payer-rule inventory</li></ul></div>
+      <div class="tli"><div class="tld">2</div><div class="tlw">Weeks 3&ndash;5</div><div class="tll">Environment Setup</div><ul><li>Infra provisioning</li><li>API connectivity</li><li>BAA + HIPAA config</li><li>KG customization</li></ul></div>
+      <div class="tli"><div class="tld">3</div><div class="tlw">Weeks 6&ndash;8</div><div class="tll">Test &amp; Validate</div><ul><li>Real referral testing</li><li>ICD accuracy review</li><li>Escalation tuning</li><li>Staff training</li></ul></div>
+      <div class="tli"><div class="tld">4</div><div class="tlw">Weeks 9&ndash;12</div><div class="tll">Pilot &amp; Go-Live</div><ul><li>Shadow-mode pilot</li><li>Live processing</li><li>Monitoring + SLAs</li><li>Handoff + runbooks</li></ul></div>
+    </div>
+    <div class="callout" style="margin-top:28px"><b>Anchored to June 10:</b> Discovery starts the week of June 16 &rarr; go-live by early September.</div>
+  </div>
+  <div class="s-foot">Deployment &amp; Rollout</div><div class="s-num">18</div>
+</section>
+
+<!-- 19 · ROADMAP -->
+<section class="slide">
+  <div class="s-top"><span class="kick">Roadmap &amp; Ecosystem</span><span class="brand">Coastal DME &middot; Intake Agent</span></div>
+  <h2 class="title">A platform, not a point solution</h2>
+  <p class="lede">Referral to payment &mdash; an 8-agent value chain. Agent 1 is live; each agent is independently deployable in your environment.</p>
+  <div class="body">
+    <div class="flow" style="flex-wrap:wrap;gap:8px">
+      <div class="fbox" style="border-top:4px solid #3b82f6"><div class="fi">&#x1F4E0;</div><div class="ft">Intake &amp; Referral</div><div class="fd"><span class="pill live">&#x25CF; Live</span></div></div>
+      <div class="fbox" style="border-top:4px solid #8b5cf6"><div class="fi">&#x1F4C5;</div><div class="ft">Scheduling</div><div class="fd"><span class="pill next">Next</span></div></div>
+      <div class="fbox"><div class="fi">&#x1F4C4;</div><div class="ft">Documentation</div></div>
+      <div class="fbox"><div class="fi">&#x1F9FE;</div><div class="ft">Billing</div></div>
+      <div class="fbox"><div class="fi">&#x1F4CA;</div><div class="ft">Collections</div></div>
+      <div class="fbox"><div class="fi">&#x1F4B3;</div><div class="ft">Cash Apps</div></div>
+      <div class="fbox"><div class="fi">&#x2696;&#xFE0F;</div><div class="ft">Appeals</div></div>
+      <div class="fbox"><div class="fi">&#x1F3E6;</div><div class="ft">Financial Shared Svcs</div></div>
+    </div>
+    <div class="g2" style="margin-top:26px">
+      <div class="card g"><div class="ch">Start where the pain is</div><div class="cd">Intake is live and proven. Scheduling is the natural next agent &mdash; but your priority shapes the order.</div></div>
+      <div class="card b"><div class="ch">One architecture, many agents</div><div class="cd">Each agent shares the same auditable, human-in-the-loop design &mdash; deploy them one at a time, de-risked.</div></div>
+    </div>
+  </div>
+  <div class="s-foot">Roadmap &amp; Agent Ecosystem</div><div class="s-num">19</div>
+</section>
+
+<!-- 20 · DECISIONS / CTA -->
+<section class="slide cover">
+  <div class="s-top"><span class="kick">Decisions &amp; Next Steps</span><span class="brand">June 10, 2026</span></div>
+  <div class="body" style="display:flex;flex-direction:column;justify-content:center">
+    <h1 style="font-size:46px">Walk in with a demo.<br>Walk out with a plan.</h1>
+    <div class="csub" style="margin-bottom:24px">Before we leave the room, we agree:</div>
+    <ul class="points" style="gap:12px">
+      <li style="color:#fff;font-size:18px"><b style="color:#fff">Pilot scope</b> &mdash; which referral types, which volume, shadow-mode start</li>
+      <li style="color:#fff;font-size:18px"><b style="color:#fff">Success metrics</b> &mdash; % auto-processed, accuracy, handling time, cost/referral</li>
+      <li style="color:#fff;font-size:18px"><b style="color:#fff">Owners &amp; dates</b> &mdash; named owner and date next to every action</li>
+      <li style="color:#fff;font-size:18px"><b style="color:#fff">Security review</b> &mdash; HIPAA/BAA kicked off the week of June 16</li>
+    </ul>
+  </div>
+  <div class="s-foot">Coastal DME &middot; Intake Agent Platform &middot; (201) 897-3854</div><div class="s-num">20</div>
+</section>
+
+</body>
+</html>

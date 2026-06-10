@@ -9,14 +9,18 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
-VAPI_KEY        = os.environ.get("VAPI_API_Key", "")
+VAPI_KEY        = os.environ.get("VAPI_API_KEY") or os.environ.get("VAPI_API_Key", "")
 ASSISTANT_ID    = "50709c92-4768-4571-ae17-40176aa72989"
 PHONE_NUMBER_ID = "9613a479-df90-40a7-a9bb-b9cddadd20a5"
 FALLBACK_PHONE  = os.environ.get("OUTBOUND_FALLBACK_PHONE", "+12012148911")
 
+# Browser-like UA — Vapi sits behind Cloudflare, which blocks default Python
+# user-agents from some corporate networks (HTTP 403, error 1010).
+_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 HEADERS = {
     "Authorization": f"Bearer {VAPI_KEY}",
     "Content-Type": "application/json",
+    "User-Agent": _UA,
 }
 
 

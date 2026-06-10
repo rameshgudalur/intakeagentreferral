@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workshop Playbook — Coastal DME Intake Agent</title>
+<style>
+  @page { size: Letter; margin: 13mm 14mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #1e293b; line-height: 1.5; font-size: 12px; background: #fff; }
+  .sheet { max-width: 860px; margin: 0 auto; padding: 24px; }
+
+  .head { border-bottom: 3px solid #1e3a5f; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .head .kicker { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #2563eb; }
+  .head h1 { font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin-top: 2px; }
+  .head .org { font-size: 12px; color: #64748b; margin-top: 3px; }
+  .head .date { font-size: 18px; font-weight: 800; color: #1e3a5f; text-align: right; flex-shrink: 0; }
+  .head .date span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
+
+  .lead { font-size: 12.5px; color: #475569; margin-bottom: 8px; }
+  .lead b { color: #0f172a; }
+  .legend { font-size: 11px; color: #64748b; margin-bottom: 18px; }
+  .legend b { color: #0f766e; }
+
+  .sess { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 11px; border-left: 4px solid #1e3a5f; break-inside: avoid; page-break-inside: avoid; }
+  .sess.demo { border-left-color: #3b82f6; } .sess.kg { border-left-color: #8b5cf6; } .sess.deploy { border-left-color: #22c55e; }
+  .sess-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .sess-time { font-size: 11px; font-weight: 800; color: #1e3a5f; white-space: nowrap; }
+  .sess-name { font-size: 14px; font-weight: 800; color: #0f172a; }
+  .sess-badge { font-size: 8.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 99px; background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+  .row { font-size: 11.5px; line-height: 1.5; margin-bottom: 3px; padding-left: 64px; text-indent: -64px; }
+  .row .lab { display: inline-block; width: 58px; font-weight: 800; font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase; color: #64748b; text-indent: 0; }
+  .row.goal .lab { color: #1e3a5f; } .row.play .lab { color: #2563eb; } .row.coll .lab { color: #0f766e; } .row.tip .lab { color: #b45309; }
+  .row b { color: #0f172a; }
+
+  .brk { font-size: 11px; color: #94a3b8; font-weight: 700; padding: 4px 0 8px; text-align: center; }
+  h2 { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #1e3a5f; margin: 20px 0 10px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+  .foot { margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 8px; font-size: 9.5px; color: #94a3b8; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="head">
+    <div>
+      <div class="kicker">Client Workshop &middot; Facilitator Playbook</div>
+      <h1>Design &rarr; Demo &rarr; Deploy &mdash; Run-of-Show</h1>
+      <div class="org">Coastal DME &middot; Workers&rsquo; Comp DME Referral Intelligence</div>
+    </div>
+    <div class="date">June 10, 2026<span>Workshop Day</span></div>
+  </div>
+
+  <p class="lead">A section-by-section playbook for the facilitator. Each session gives the <b>Goal</b>, <b>The Play</b> (how you run it), the <b>Collateral</b> to have ready, and a <b>Tip</b>.</p>
+  <p class="legend">Hands-on markers: <b>&#x1F9EA; Live Lab</b> &middot; <b>&#x1F0CF; Card Sort</b> &middot; <b>&#x1F6E0; Build Live</b>. Breaks at 10:45 &amp; 2:30; lunch 12:20 (good for 1:1 security/IT questions).</p>
+
+  <div class="sess">
+    <div class="sess-top"><span class="sess-time">9:00 &middot; 30m</span><span class="sess-name">&#x1F44B; Welcome &amp; Objectives</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Shared definition of success; agree the decisions to leave with.</div>
+    <div class="row play"><span class="lab">Play</span>Open with the client&rsquo;s own pain (backlog, rekeying). Put a &ldquo;What does good look like?&rdquo; poster up; each attendee posts one outcome on a sticky note. Group them live &mdash; that becomes the day&rsquo;s scorecard.</div>
+    <div class="row coll"><span class="lab">Collateral</span>printed agenda run-sheet &middot; objectives worksheet &middot; attendee name cards &middot; sticky notes + markers.</div>
+    <div class="row tip"><span class="lab">Tip</span>Don&rsquo;t demo yet. Make <i>their</i> goals the frame everything else pays off against.</div>
+  </div>
+
+  <div class="sess demo">
+    <div class="sess-top"><span class="sess-time">9:30 &middot; 45m</span><span class="sess-name">&#x25B6; Live Demonstration</span><span class="sess-badge">&#x1F9EA; Live Lab</span></div>
+    <div class="row goal"><span class="lab">Goal</span>The &ldquo;is it real?&rdquo; moment &mdash; answered on screen, on their data.</div>
+    <div class="row play"><span class="lab">Play</span>Run a real referral packet end-to-end (extraction &rarr; ICD conflict &rarr; gap detection &rarr; outreach &rarr; routing). Hand out printed copies of the same packet; attendees scan the QR and run one at the stations.</div>
+    <div class="row coll"><span class="lab">Collateral</span>printed referral packets &middot; QR cards to the live demo (Railway URL) &middot; laptop/tablet stations &middot; recap card.</div>
+    <div class="row tip"><span class="lab">Tip</span>Use a packet with a deliberate gap so gap-detection visibly fires &mdash; that&rsquo;s the credibility builder.</div>
+  </div>
+
+  <div class="sess">
+    <div class="sess-top"><span class="sess-time">10:15 &middot; 30m</span><span class="sess-name">&#x1F9E9; How It Works &mdash; Architecture &amp; Workflow</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Show the design is principled, not a black box.</div>
+    <div class="row play"><span class="lab">Play</span>Gather at the architecture poster. Trace one referral&rsquo;s path with your finger: intake &rarr; AI extraction &rarr; OWL rule engine &rarr; completeness &rarr; route. Tie each stop to what they just saw.</div>
+    <div class="row coll"><span class="lab">Collateral</span>architecture + workflow poster (foam board) &middot; data-flow one-pager &middot; 25-field episode-record sample.</div>
+    <div class="row tip"><span class="lab">Tip</span>Keep it a <i>walk-the-wall</i>, not slides. Let them point and ask.</div>
+  </div>
+
+  <div class="brk">&#x2615; Break &middot; 10:45 &middot; 15 min</div>
+
+  <div class="sess">
+    <div class="sess-top"><span class="sess-time">11:00 &middot; 40m</span><span class="sess-name">&#x1F6E1; Trust &amp; Human-in-the-Loop</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Answer &ldquo;can we trust it?&rdquo; head-on.</div>
+    <div class="row play"><span class="lab">Play</span>Walk the four-layer-defense one-pager, then live-trigger a low-confidence case so the agent stops and routes to the human queue. Pass around a printed audit trail for one episode.</div>
+    <div class="row coll"><span class="lab">Collateral</span>four-layer-defense one-pager &middot; sample audit-trail printout &middot; escalation-queue screenshot card.</div>
+    <div class="row tip"><span class="lab">Tip</span>&ldquo;Stump the agent&rdquo; &mdash; invite a tricky case. When it escalates instead of guessing, trust is earned.</div>
+  </div>
+
+  <div class="sess kg">
+    <div class="sess-top"><span class="sess-time">11:40 &middot; 40m</span><span class="sess-name">&#x1F50C; Integration &amp; Knowledge Graph</span><span class="sess-badge">&#x1F0CF; Card Sort</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Prove it fits their stack with no rip-and-replace.</div>
+    <div class="row play"><span class="lab">Play</span>Hand each table the 24 rule cards; sort by payer/scenario. Show the same rules firing in the agent. Walk the integration one-pager (API/RPA/file) against their systems.</div>
+    <div class="row coll"><span class="lab">Collateral</span>deck of 24 CMS rule cards &middot; integration-patterns one-pager &middot; knowledge-graph poster.</div>
+    <div class="row tip"><span class="lab">Tip</span>Capture which intake channels and case-mgmt/EHR they use &mdash; it seeds the Discovery phase.</div>
+  </div>
+
+  <div class="brk">&#x1F374; Lunch &middot; 12:20 &middot; 50 min &mdash; informal time for security/IT to ask the hard questions 1:1</div>
+
+  <div class="sess">
+    <div class="sess-top"><span class="sess-time">1:10 &middot; 40m</span><span class="sess-name">&#x1F3E2; Security, Compliance &amp; Enterprise Readiness</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Clear the #1 blocker &mdash; PHI/HIPAA.</div>
+    <div class="row play"><span class="lab">Play</span>Work the HIPAA/PHI checklist line by line; walk the data-boundary diagram (PHI never leaves their boundary); hand the security lead the draft BAA summary to take away.</div>
+    <div class="row coll"><span class="lab">Collateral</span>HIPAA/PHI checklist &middot; draft BAA summary &middot; security-architecture one-pager.</div>
+    <div class="row tip"><span class="lab">Tip</span>Get the security/IT stakeholder in the room for <i>this</i> slot. Their yes unblocks everything.</div>
+  </div>
+
+  <div class="sess">
+    <div class="sess-top"><span class="sess-time">1:50 &middot; 40m</span><span class="sess-name">&#x1F4B0; The Business Case &amp; ROI</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Turn &ldquo;impressive&rdquo; into &ldquo;justified.&rdquo;</div>
+    <div class="row play"><span class="lab">Play</span>Plug their volume into the ROI calculator live; show $0.032/referral against time saved and throughput. Let them see the payback on their own numbers.</div>
+    <div class="row coll"><span class="lab">Collateral</span>ROI calculator handout (editable) &middot; token-economics one-pager &middot; cost-per-referral card.</div>
+    <div class="row tip"><span class="lab">Tip</span>Ask for monthly referral volume up front so the number on screen is <i>theirs</i>.</div>
+  </div>
+
+  <div class="brk">&#x2615; Break &middot; 2:30 &middot; 15 min</div>
+
+  <div class="sess deploy">
+    <div class="sess-top"><span class="sess-time">2:45 &middot; 40m</span><span class="sess-name">&#x1F680; Deployment &amp; Rollout Plan</span><span class="sess-badge">&#x1F6E0; Build Live</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Make the path concrete and low-risk.</div>
+    <div class="row play"><span class="lab">Play</span>Walk the 8&ndash;12 week timeline poster (Discovery &rarr; Setup &rarr; Test &rarr; Pilot/Go-Live). Then build live: make a small payer-rule tweak and push it &mdash; show it on the public site minutes later.</div>
+    <div class="row coll"><span class="lab">Collateral</span>8&ndash;12 week timeline poster &middot; environment &amp; integration checklist &middot; deployment runbook outline.</div>
+    <div class="row tip"><span class="lab">Tip</span>Pre-stage the change so the live build is quick and can&rsquo;t flop in the room.</div>
+  </div>
+
+  <div class="sess">
+    <div class="sess-top"><span class="sess-time">3:25 &middot; 30m</span><span class="sess-name">&#x1F517; Roadmap &amp; Agent Ecosystem</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Show it&rsquo;s a platform, not a point tool.</div>
+    <div class="row play"><span class="lab">Play</span>Reveal the 8-agent value-chain poster; mark Agent 1 (intake) live, scheduling next. Invite them to point at which agent solves their next-biggest pain.</div>
+    <div class="row coll"><span class="lab">Collateral</span>8-agent value-chain poster &middot; roadmap one-pager &middot; scheduling-agent teaser card.</div>
+    <div class="row tip"><span class="lab">Tip</span>Let their priority shape the roadmap order &mdash; co-ownership drives the deal.</div>
+  </div>
+
+  <div class="sess">
+    <div class="sess-top"><span class="sess-time">3:55 &middot; 35m</span><span class="sess-name">&#x2705; Decisions, Owners &amp; Next Steps</span></div>
+    <div class="row goal"><span class="lab">Goal</span>Walk out with commitments, not impressions.</div>
+    <div class="row play"><span class="lab">Play</span>Fill the decision log on the wall: pilot scope, success metrics (from the morning stickies), named owners, dates. Get a signature on the pilot-scope sign-off.</div>
+    <div class="row coll"><span class="lab">Collateral</span>decision log + owners (RACI) sheet &middot; pilot-scope sign-off form &middot; success-metrics worksheet.</div>
+    <div class="row tip"><span class="lab">Tip</span>Nothing leaves the room without an owner and a date next to it.</div>
+  </div>
+
+  <div class="foot">
+    <span>Coastal DME Intake Agent Platform &middot; (201) 897-3854 &middot; AI answers 24/7</span>
+    <span>Companion to: Agenda &amp; Slides/Posters</span>
+  </div>
+
+</div>
+</body>
+</html>
