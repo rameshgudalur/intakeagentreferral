@@ -397,14 +397,20 @@ header{background:#1e3a5f;padding:0 24px;display:flex;align-items:center;justify
 <div class="modal-overlay" id="fax-modal">
   <div class="modal">
     <div class="modal-title">&#x1F4E0; Incoming Fax Referral</div>
-    <div class="modal-sub">A new referral package has arrived on the intake line — 3 documents ready for processing.</div>
-    <div style="margin:20px 0;padding:16px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;text-align:center">
-      <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:4px">Michelle Tran &nbsp;·&nbsp; Power Wheelchair K0823</div>
-      <div style="font-size:11px;color:#166534">3 documents &nbsp;·&nbsp; Pacific Mutual Workers Comp &nbsp;·&nbsp; Vietnamese interpreter</div>
+    <div class="modal-sub">Fax a referral package to our live intake line — it lands in the queue automatically, no upload required.</div>
+    <div style="margin:18px 0;padding:18px;background:#eff6ff;border:1px solid var(--blue-m);border-radius:10px;text-align:center">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1d4ed8;margin-bottom:6px">Send your 3 documents to</div>
+      <div style="font-size:24px;font-weight:800;color:#1e3a5f;font-family:monospace;letter-spacing:.02em">+1 (609) 637-1507</div>
+      <div style="font-size:11px;color:#475569;margin-top:8px;line-height:1.5">Referral form &middot; clinical notes &middot; prescription — fax all three together in one transmission. The agent picks it up and begins processing within ~30 seconds.</div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--gray);margin:0 0 6px">&mdash; or process a sample fax now &mdash;</div>
+    <div style="margin:0 0 4px;padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;text-align:center">
+      <div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:3px">Michelle Tran &nbsp;·&nbsp; Power Wheelchair K0823</div>
+      <div style="font-size:10px;color:#166534">Sample fax &middot; 3 documents &middot; Pacific Mutual Workers Comp &middot; Vietnamese interpreter</div>
     </div>
     <div class="modal-actions" style="justify-content:space-between">
       <button class="btn-cancel" onclick="closeFaxModal()">Cancel</button>
-      <button class="btn-pipeline" onclick="triggerDemoFax()" style="font-size:13px;padding:10px 22px">&#x26A1; Process Incoming Fax</button>
+      <button class="btn-pipeline" onclick="triggerDemoFax()" style="font-size:13px;padding:10px 22px">&#x26A1; Process Sample Fax</button>
     </div>
   </div>
 </div>

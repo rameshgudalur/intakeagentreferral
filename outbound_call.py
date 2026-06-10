@@ -51,14 +51,18 @@ def place_outbound_call(episode: dict) -> dict:
     claim_number   = episode.get("claim_number", "unknown")
     gaps           = episode.get("gaps", [])
 
+    # Spell out hyphens in the claim number for TTS — a literal "-" is read aloud
+    # as "minus." Writing " dash " makes the voice say "dash" as intended.
+    spoken_claim = claim_number.replace("-", " dash ")
+
     # Build a dynamic first message so the AI leads with context
     gap_str = ", ".join(gaps) if gaps else "some missing information"
     first_message = (
         f"Hello, may I speak with {adjuster_name}? "
         f"This is the Coastal DME intake system calling regarding "
-        f"a referral for {patient_name}, claim number {claim_number}. "
+        f"a referral for {patient_name}, claim number {spoken_claim}. "
         f"We sent an email earlier about some missing information we need "
-        f"to process this referral — specifically {gap_str}. "
+        f"to process this referral, specifically {gap_str}. "
         f"Could you help us with those details now?"
     )
 

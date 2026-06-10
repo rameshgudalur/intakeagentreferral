@@ -1191,6 +1191,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
+  <!-- Live outbound call — auto-triggered when this step is entered. Placed FIRST;
+       the transcript below is revealed only after the call goes out. -->
+  <div class="card" style="margin-top:14px;border-color:var(--blue-m);background:var(--blue-l)">
+    <div class="card-hd" style="color:var(--blue)">&#x1F4DE; Outbound Call — Auto-Triggered</div>
+    <div style="font-size:12px;color:var(--dark);margin-bottom:14px;line-height:1.5">
+      Email unanswered after 24 hours — agent automatically places an outbound call to <b>{{ fields.get('adjuster_name', 'the case manager') }}</b> via the DME Intake Line <span style="font-family:monospace">+1 (201) 897-3854</span> to collect all outstanding items for claim <b>{{ fields.get('claim_number', claim) }}</b>.
+    </div>
+    <div id="call-status" style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--gray)">
+      &#x23F3; Initiating call...
+    </div>
+    <button id="call-btn" style="display:none;background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-top:10px" onclick="placeOutboundCall()">
+      &#x1F4DE; Retry Call
+    </button>
+  </div>
+
+  <!-- Revealed only after the call has been placed (see placeOutboundCall) -->
+  <div id="post-call-block" style="display:none">
   <div class="call-transcript">
     <div class="ct-ttl">&#x1F3A4; AI Call Transcript (abbreviated · 84 sec)</div>
     <div class="ct-line">
@@ -1260,20 +1277,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <span style="font-size:16px">&#x2705;</span>
     <span>All outstanding fields collected · Episode record updated · 84 seconds · Zero manual entry · No human agent required</span>
   </div>
-
-  <!-- Live outbound call — auto-triggered when this step is entered -->
-  <div class="card" style="margin-top:14px;border-color:var(--blue-m);background:var(--blue-l)">
-    <div class="card-hd" style="color:var(--blue)">&#x1F4DE; Outbound Call — Auto-Triggered</div>
-    <div style="font-size:12px;color:var(--dark);margin-bottom:14px;line-height:1.5">
-      Email unanswered after 24 hours — agent automatically places an outbound call to <b>{{ fields.get('adjuster_name', 'the case manager') }}</b> via the DME Intake Line <span style="font-family:monospace">+1 (201) 897-3854</span> to collect all outstanding items for claim <b>{{ fields.get('claim_number', claim) }}</b>.
-    </div>
-    <div id="call-status" style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--gray)">
-      &#x23F3; Initiating call...
-    </div>
-    <button id="call-btn" style="display:none;background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-top:10px" onclick="placeOutboundCall()">
-      &#x1F4DE; Retry Call
-    </button>
-  </div>
+  </div><!-- /post-call-block -->
 
   {% else %}
   <div class="card green">
@@ -1509,6 +1513,12 @@ function placeOutboundCall() {
       if (data.success) {
         status.style.color = '#16a34a';
         status.innerHTML = '&#x2705; Call placed · ID: ' + (data.call_id || 'confirmed') + ' · Agent dialing now';
+        // Reveal the transcript only once the call has actually gone out
+        const post = document.getElementById('post-call-block');
+        if (post) setTimeout(() => {
+          post.style.display = 'block';
+          status.innerHTML = '&#x2705; Call complete · ID: ' + (data.call_id || 'confirmed') + ' · transcript below';
+        }, 3000);
       } else {
         status.style.color = '#dc2626';
         status.innerHTML = '&#x26A0; Call failed: ' + (data.reason || 'unknown error');
