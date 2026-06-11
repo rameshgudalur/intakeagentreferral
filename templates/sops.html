@@ -138,6 +138,7 @@
       <div class="ic-d">The agent reads the SOP and extracts structured, citable rules &mdash; gap, coding, coverage, jurisdiction, autonomy, and escalation criteria &mdash; ready to enforce.</div>
       <button id="ingestBtn" class="ingest-btn" onclick="ingestSOP()">&#x2699; Ingest SOP &rarr; generate rules</button>
       <div id="ingestStatus" class="ingest-status"></div>
+      <a id="goLive" href="/demo" style="display:none;margin-top:12px;background:#16a34a;color:#fff;text-decoration:none;padding:11px 16px;border-radius:9px;font-size:13px;font-weight:800;text-align:center">&#x25B6; SOPs active &mdash; Go to Live Processing &rarr;</a>
     </div>
   </div>
 
@@ -251,6 +252,7 @@ function ingestSOP(){
     }).join('');
     btn.disabled=false; btn.textContent='⚙ Re-ingest SOP → generate rules';
     st.innerHTML = (d.source==='live' ? '<span class="live-badge">● Live LLM extraction</span>' : '<span class="cache-badge">● Cached extraction</span>') + ' · '+rules.length+' rules generated' + (d.activated ? ' · <b style="color:#15803d">now active in live processing</b>' : '');
+    const g = document.getElementById('goLive'); if (g) g.style.display = 'block';
     refreshAuthToggle();
   }).catch(()=>{ btn.disabled=false; btn.textContent='⚙ Ingest SOP → generate rules'; st.textContent='Error — try again'; });
 }
@@ -265,6 +267,7 @@ function refreshAuthToggle(){
     const n=document.getElementById('authToggleNote');
     if(!s.ingested){ if(n) n.textContent='Ingest the SOP first to enable enforcement.'; return; }
     setAuthBtn((s.clauses||[]).indexOf('2.1') !== -1);
+    const g = document.getElementById('goLive'); if (g) g.style.display = 'block';
   }).catch(()=>{});
 }
 function toggleAuth(){
