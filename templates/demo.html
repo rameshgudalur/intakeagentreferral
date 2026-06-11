@@ -439,9 +439,20 @@ let inboxFilter = 'all';
 window.addEventListener('DOMContentLoaded', () => {
   fetch('/api/reset', {method: 'POST'})
     .then(() => fetchStatus())   // pull fresh zeros into DOM immediately
+    .then(() => refreshSopIndicator())
     .catch(() => {});
   loadInboxFolders();
 });
+
+// Reflect SOP-ingest status: processing is gated until SOPs are ingested.
+function refreshSopIndicator() {
+  fetch('/api/sop-status').then(r => r.json()).then(s => {
+    const st = document.getElementById('status-text');
+    if (!st) return;
+    if (s.ingested) st.innerHTML = '&#x2713; SOPs active — ' + s.count + ' rules · ready to process';
+    else st.innerHTML = '&#x26A0; Ingest SOPs first — <a href="/panel/sops" target="_blank" style="color:#fbbf24;font-weight:800">open the SOP panel</a>, then Start';
+  }).catch(() => {});
+}
 
 // ── TAB SWITCHING ─────────────────────────────────────────────────────────────
 function switchTab(name) {
@@ -560,7 +571,24 @@ async function inboxUploadFax(file) {
   }
 }
 
+function sopGateBlock() {
+  const st = document.getElementById('status-text');
+  if (st) st.innerHTML = '&#x26A0; SOPs not ingested — the agent runs on your SOPs. '
+    + '<a href="/panel/sops" target="_blank" style="color:#fbbf24;font-weight:800">Open the SOP panel</a>, '
+    + 'click &ldquo;Ingest SOP &rarr; generate rules,&rdquo; then Start.';
+  const b = document.getElementById('btn-start');
+  if (b) { b.disabled = false; b.textContent = 'Start Live Processing'; }
+}
+
 function startProcessing() {
+  // Gate: SOPs must be ingested before any processing run.
+  fetch('/api/sop-status').then(r => r.json()).then(s => {
+    if (!s.ingested) { sopGateBlock(); return; }
+    _doStartProcessing();
+  }).catch(() => _doStartProcessing());
+}
+
+function _doStartProcessing() {
   document.getElementById('btn-start').disabled = true;
   document.getElementById('btn-start').textContent = 'Starting...';
   document.getElementById('live-badge').style.display = 'flex';
@@ -573,6 +601,7 @@ function startProcessing() {
   })
   .then(r => r.json())
   .then(data => {
+    if (data && data.error === 'sops_not_ingested') { sopGateBlock(); return; }
     processingStarted = true;
     document.getElementById('status-text').textContent = 'Live agent processing — AI extraction in flight';
     document.getElementById('btn-reset').style.display = 'inline-flex';

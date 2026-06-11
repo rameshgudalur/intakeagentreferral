@@ -945,6 +945,30 @@ def api_ingest_sop():
     return jsonify({"source": "fallback", "rules": _SOP_RULES_FALLBACK, "activated": True})
 
 
+@app.route("/sop-doc")
+def sop_doc():
+    """Serve the sample SOP as a Word document — the source the agent ingests."""
+    return send_from_directory(str(BASE_DIR / "deliverables"), "coastal_intake_sop.docx",
+                               mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+def _sop_ingested():
+    """True once an SOP has been ingested this session (active_sop_rules.json written)."""
+    return _SOP_ACTIVE_PATH.exists()
+
+@app.route("/api/sop-status")
+def api_sop_status():
+    ingested = _sop_ingested()
+    rules, ts = [], ""
+    if ingested:
+        try:
+            rules = json.loads(_SOP_ACTIVE_PATH.read_text(encoding="utf-8"))
+            ts = datetime.datetime.fromtimestamp(_SOP_ACTIVE_PATH.stat().st_mtime).strftime("%H:%M")
+        except Exception:
+            pass
+    return jsonify({"ingested": ingested, "count": len(rules), "ingested_at": ts,
+                    "source": "coastal_intake_sop.docx"})
+
+
 @app.route("/api/episodes")
 def api_episodes():
     """Per-referral detail for the 40-demo set: latency + key factors per episode
@@ -1029,6 +1053,13 @@ def api_start():
     with _lock:
         if _state["status"] == "running":
             return jsonify({"error": "Already running"}), 400
+
+    # Gate: the agent runs on the client's SOP-configured rules — require an SOP
+    # ingest before any processing run (self-serve user ingests SOPs first).
+    if not _sop_ingested():
+        return jsonify({"error": "sops_not_ingested",
+                        "message": "Ingest your SOPs first — the agent runs on your SOP-configured rules. "
+                                   "Open the SOP panel and click ‘Ingest SOP → generate rules,’ then start."}), 409
 
     # Reset state
     with _lock:

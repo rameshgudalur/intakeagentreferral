@@ -1,17 +1,20 @@
-"""Generate the external-facing POC walkthrough as a Word document."""
+"""Generate the self-guided (self-serve) walkthrough as a Word document."""
 from pathlib import Path
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+import os
 
 NAVY = RGBColor(0x1E, 0x3A, 0x5F)
 BLUE = RGBColor(0x25, 0x63, 0xEB)
 GRAY = RGBColor(0x47, 0x55, 0x69)
 GREEN = RGBColor(0x15, 0x80, 0x3D)
+PURPLE = RGBColor(0x6D, 0x28, 0xD9)
+
+URL = "https://web-production-efe30.up.railway.app"
+PASSWORD = "coastal2026"
 
 doc = Document()
-
-# Base font
 style = doc.styles["Normal"]
 style.font.name = "Calibri"
 style.font.size = Pt(11)
@@ -20,260 +23,140 @@ def heading(text, size=15, color=NAVY, space_before=14, space_after=4):
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(space_before)
     p.paragraph_format.space_after = Pt(space_after)
-    r = p.add_run(text)
-    r.bold = True
-    r.font.size = Pt(size)
-    r.font.color.rgb = color
+    r = p.add_run(text); r.bold = True; r.font.size = Pt(size); r.font.color.rgb = color
     return p
 
-def label_say(text):
-    p = doc.add_paragraph()
-    p.paragraph_format.space_after = Pt(6)
-    lab = p.add_run("Say:  ")
-    lab.bold = True
-    lab.font.color.rgb = BLUE
-    r = p.add_run("“" + text + "”")
-    r.italic = True
+def labeled(label, text, lab_color, italic=False):
+    p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(6)
+    l = p.add_run(label + "  "); l.bold = True; l.font.color.rgb = lab_color
+    r = p.add_run(text); r.italic = italic
     return p
 
-def label_screen(text):
-    p = doc.add_paragraph()
-    p.paragraph_format.space_after = Pt(4)
-    lab = p.add_run("On screen:  ")
-    lab.bold = True
-    lab.font.color.rgb = GRAY
-    p.add_run(text)
-    return p
-
-def nav(text):
-    p = doc.add_paragraph()
-    p.paragraph_format.space_after = Pt(5)
-    lab = p.add_run("➤ Navigate:  ")
-    lab.bold = True
-    lab.font.color.rgb = NAVY
-    r = p.add_run(text)
-    r.bold = True
-    return p
-
-def key(text):
-    p = doc.add_paragraph()
-    p.paragraph_format.left_indent = Inches(0.2)
-    p.paragraph_format.space_after = Pt(8)
-    lab = p.add_run("Key message:  ")
-    lab.bold = True
-    lab.font.color.rgb = GREEN
-    r = p.add_run(text)
-    return p
+def nav(text):  return labeled("➤ Click:", text, NAVY)
+def see(text):  return labeled("See:", text, GRAY)
+def why(text):  return labeled("Why it matters:", text, GREEN)
 
 def body(text, space_after=8):
-    p = doc.add_paragraph()
-    p.paragraph_format.space_after = Pt(space_after)
-    p.add_run(text)
-    return p
+    p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(space_after)
+    p.add_run(text); return p
 
 # ── Title ──
 t = doc.add_paragraph()
-t.alignment = WD_ALIGN_PARAGRAPH.LEFT
-r = t.add_run("Intake Agent — Live Demonstration Walkthrough")
-r.bold = True
-r.font.size = Pt(22)
-r.font.color.rgb = NAVY
+r = t.add_run("Live Intake and Referral Agent"); r.bold = True; r.font.size = Pt(23); r.font.color.rgb = NAVY
 sub = doc.add_paragraph()
-rs = sub.add_run("A guided walkthrough of the working intake agent, on real referral packages.")
-rs.italic = True
-rs.font.size = Pt(12)
-rs.font.color.rgb = GRAY
+rs = sub.add_run("A self-guided walkthrough — explore the working agent yourself in ~15 minutes."); rs.italic = True; rs.font.size = Pt(12); rs.font.color.rgb = GRAY
 doc.add_paragraph().add_run("—" * 30).font.color.rgb = RGBColor(0xCB,0xD5,0xE1)
 
-# ── Intro ──
-heading("Before you begin", 13)
-body("This guide walks an audience through the intake agent end to end — from a stack of "
-     "referral documents to a complete, routed, fully auditable record. It is a working proof of "
-     "concept running on real referral packages, not a slide presentation. Read the lines aloud as "
-     "written, or in your own words; the goal is to let the system show its work at every step.")
-body("Allow roughly 25–30 minutes for the walkthrough, with time for questions at the end.")
-nav("Open the demonstration link in a browser, enter the access password, and click "
-    "“Enter POC.” You’ll arrive on the Hub — the home screen with a grid of cards on the "
-    "left and one large “Launch POC” card on the right. Start every stop below from the Hub.")
+# ── Access ──
+heading("Getting in", 13)
+ab = doc.add_paragraph(); ab.paragraph_format.space_after = Pt(4)
+ab.add_run("Link:  ").bold = True
+lk = ab.add_run(URL); lk.font.color.rgb = BLUE
+ap = doc.add_paragraph(); ap.paragraph_format.space_after = Pt(8)
+ap.add_run("Password:  ").bold = True
+ap.add_run(PASSWORD)
+body("Open the link, enter the password, and click “Enter.” You’ll land on the Hub. "
+     "This is a live working agent on real referral packages — not slides. Take it at your own pace; "
+     "nothing you click can break it.")
 
-heading("Click-path at a glance", 13)
+# ── click-path at a glance ──
+heading("Where to click — at a glance", 13)
 steps = [
-    ("1–2", "Hub → click “8-Agent Value Chain” → back to Hub (top-left “Coastal DME”)"),
-    ("3",   "Hub → click “Launch POC” → click “Start Live Processing”"),
-    ("4",   "Click the highlighted James Holloway → step through with the “→” buttons (Step 1–7)"),
-    ("5",   "Step 05 Email → Step 06 Voice (call auto-places — answer on speaker)"),
-    ("6",   "Step 07 Route Output → back to Hub → “Observability Dashboard” → drill into episode"),
-    ("7",   "Hub → “Launch POC” → click “Receive New Fax”"),
-    ("8",   "Hub → “Scale & Cost Calculator”"),
-    ("9",   "Hub → “Live Observability Dashboard” / “Referral Analytics” / “Coached Intake Simulator”"),
+    ("1", "Hub → read the cards (orientation)"),
+    ("2", "Click the big “Live Intake and Referral Agent” card → “Start Live Processing”"),
+    ("3", "Click the highlighted “James Holloway” row → step through with the “→” buttons"),
+    ("4", "Back to Hub → “Your SOPs → The Agent’s Rules” → click “Ingest SOP → generate rules”"),
+    ("5", "Hub → “Live Observability Dashboard”"),
+    ("6", "Hub → “Referral Analytics”, then “Scale & Cost Calculator”"),
+    ("7", "Hub → “8-Agent Value Chain” (the bigger picture)"),
 ]
-gt = doc.add_table(rows=1, cols=2)
-gt.style = "Light Grid Accent 1"
-gh = gt.rows[0].cells
-gh[0].paragraphs[0].add_run("Stop").bold = True
-gh[1].paragraphs[0].add_run("Where to click").bold = True
-for s, where in steps:
-    c = gt.add_row().cells
-    c[0].text = s
-    c[1].text = where
+gt = doc.add_table(rows=1, cols=2); gt.style = "Light Grid Accent 1"
+gt.rows[0].cells[0].paragraphs[0].add_run("Stop").bold = True
+gt.rows[0].cells[1].paragraphs[0].add_run("Where to click").bold = True
+for s, w in steps:
+    c = gt.add_row().cells; c[0].text = s; c[1].text = w
 
 # ── 1 ──
-heading("1.  Opening — the problem in one breath")
-nav("Stay on the Hub for this opening. (Optional: click the “8-Agent Value Chain” card to show "
-    "the bigger picture, then click the “Coastal DME” name at the top-left to come back.)")
-label_say("Every referral that arrives today is a person reading three or four documents — a "
-          "referral form, clinical notes, a prescription — pulling out the key fields by hand, "
-          "spotting what’s missing, and chasing the case manager for the rest. It’s accurate "
-          "when people are fresh, and slower when they’re buried. What you’re about to see is "
-          "an agent doing that same intake work end to end, on real referral packages, and showing "
-          "its reasoning at every step.")
-key("We are not replacing judgment. We are removing the manual reading and the chasing, and making "
-    "every decision traceable.")
+heading("1.  The Hub — orientation")
+nav("Nothing yet — just read the cards on the landing page.")
+see("A grid of capability cards (Knowledge Graph, Your SOPs, Live Observability, Analytics, Scale & Cost, the 8-Agent Value Chain) and one large card to launch the live agent.")
+why("This is one intake agent plus the layers around it — the rule engine it runs on, where its rules come from, how it’s observed, and how it scales. You’ll visit the key ones below.")
 
 # ── 2 ──
-heading("2.  The starting point — what the system covers")
-nav("On the Hub, click the “8-Agent Value Chain” card. After you’ve framed it, click the "
-    "“Coastal DME” name at the top-left to return to the Hub.")
-label_screen("The eight-agent value chain — referral to payment — with Agent 1 (intake) built and live.")
-label_say("Before we go live, here’s the bigger picture. The full workers’-comp operations cycle, "
-          "referral to payment, is eight modular agents. What you’re about to see is the first one — "
-          "intake — built and running today. The others are on the roadmap, each one deployable on "
-          "its own inside your environment. So this isn’t a science project; it’s the first agent "
-          "of a chain, live.")
+heading("2.  Watch the agent work")
+nav("The large “Live Intake and Referral Agent” card → then the green “Start Live Processing” button.")
+see("A queue of real referrals processing in real time — patient, equipment, priority (with the reason), gaps, and outcome resolving row by row. Every row’s 3 source documents are openable (📄 📋 💊).")
+why("It reads every page, extracts the fields, checks them against cited rules, scores its own confidence, and decides route-vs-flag — with no manual data entry. Outreach is drafted, never blind-sent.")
+body("As rows process, the live activity log at the bottom of the screen cites the SOP clause behind "
+     "each decision — e.g. “held per SOP §2.1”, “ICD conflict → clinical code per SOP §3.4”, “escalated "
+     "per SOP §6.1 / §8.0”. That’s the agent applying your SOPs, live.")
+body("Tip: let a few rows finish; the “James Holloway” row is highlighted for the next step.", space_after=10)
 
 # ── 3 ──
-heading("3.  Live processing — watch it work")
-nav("On the Hub, click the large “Launch POC” card on the right (“Live Intake Agent POC”). "
-    "On the live screen, click the green “Start Live Processing” button.")
-label_screen("A queue of incoming referrals processing in real time.")
-label_say("These are real referral packages going through the agent right now. For each one it reads "
-          "every page, extracts the fields, checks them against a rules engine, scores its own "
-          "confidence, and decides: route it, or flag a gap. Watch the rows resolve — patient, "
-          "equipment, priority, missing items — with no manual data entry.")
-key("Outreach is drafted, never blind-sent — a person still approves anything that leaves the building.")
-body("As the queue runs, point out one referral you’ll open in detail, and say you’ll go in "
-     "while the others finish.", space_after=10)
+heading("3.  Inside one referral — the “is it real?” moment")
+nav("Click the highlighted James Holloway row (or “Open Pipeline”). Step through 01 → 07 with the “→” buttons at the bottom of each step.")
+see("The full pipeline, stepped 01–07:  01 Channel Intake  ·  02 Data Normalization (every field traced to a source document)  ·  "
+    "03 Intelligence Layer (cited knowledge-graph validation + an ICD-code conflict where the agent escalates instead of guessing, plus confidence tier)  ·  "
+    "04 Gap Triage (what’s missing — hard-block vs soft)  ·  05 Digital Outreach (email, drafted)  ·  "
+    "06 Voice Outreach (a live call, then the transcript)  ·  07 Route Output (the route-ready record).")
+why("This is the credibility core: it shows its work at every step, and when evidence is split it stops and routes to a human. The restraint is the feature.")
+body("Where SOPs show up here: on Step 03 (Intelligence Layer) you’ll see “Rules sourced from your SOPs →” "
+     "(opens Stop 4); at Step 07 (Route Output) a “SOPs Applied to This Episode” card lists the exact SOP "
+     "clauses that governed this referral — decision → clause → regulation. On Step 06 (Voice Outreach) the "
+     "agent places a real call to a demo line (you don’t need to answer); the transcript appears after.", space_after=10)
 
 # ── 4 ──
-heading("4.  Inside one referral — the “is it real?” moment")
-nav("As the queue runs, the James Holloway referral is highlighted — click it (or click "
-    "“Open Pipeline” on his row) to open the full pipeline. Move through the steps with the "
-    "“→” button at the bottom of each step (or the step tabs across the top): Step 1 through Step 7.")
-label_screen("The full step-by-step pipeline for a single referral.")
-body("Walk the steps from the top.")
-label_say("Three source documents. The agent pulled every field and tells you exactly where each "
-          "value came from. Nothing is invented — if it isn’t in the documents, it’s a "
-          "gap, not a guess.")
-label_say("Extraction alone isn’t trust. Every field is then checked against a rules engine built "
-          "on published clinical and coverage rules, each one cited. This is the difference between "
-          "‘the AI said so’ and ‘the rule says so, and here’s the citation.’")
-label_say("Here’s where it gets honest. The three documents disagree on diagnosis codes. The "
-          "agent resolves the ones it’s confident about — but on one of them the evidence is "
-          "split, its confidence drops below the threshold, and it stops. It does not guess. It "
-          "escalates to a human, with its reasoning attached.")
-key("The restraint is the feature. The agent knows what it doesn’t know, and escalates instead "
-    "of guessing.")
-label_say("It also reads the jurisdiction and applies the right turnaround clock — some states "
-          "carry a tighter service-level deadline, and the agent prioritizes accordingly.")
+heading("4.  Your SOPs → the Agent’s Rules  (the differentiator)")
+nav("Back to the Hub → “Your SOPs → The Agent’s Rules” → click “Ingest SOP → generate rules.”")
+see("A sample intake SOP on the left; on click, the agent reads it and generates the structured rules live — each mapped to its SOP clause and the CMS authority behind it. Plus governance (versioned, owner, change-control).")
+why("The agent doesn’t run on generic logic — it runs on YOUR procedures. Change an SOP, the rule regenerates under review. And in any referral’s audit trail, each decision traces back: decision → rule → SOP clause → regulation.")
+body("Seeing it in the run: the live log cites the SOP behind each decision — e.g. “held per SOP §2.1”, "
+    "“ICD conflict → clinical code per SOP §3.4”, “jurisdiction TX SLA 2d per SOP §5.2”, “escalated per "
+    "SOP §6.1 / §8.0”. The agent loads your SOP rule set on every run and evaluates each rule against "
+    "every referral — it’s not a fixed script.")
+body("Where it is on the maturity curve (worth being precise): the agent reads and runs your SOP rules "
+    "today and traces every decision to its clause and regulation. Having your SOP library also set the "
+    "exact thresholds directly (confidence cut-offs, state SLAs) is the deployment-phase step — "
+    "configured-from-your-SOPs today, deepening to generated-from-your-SOPs in deployment.", space_after=10)
 
 # ── 5 ──
-heading("5.  Reaching out — email, then a live phone call")
-nav("Continue to “Step 05 — Email Outreach,” then to “Step 06 — Voice Outreach.” On Step 6 the "
-    "call places itself automatically — have your phone ready and answer it on speaker.")
-label_screen("The outreach step, where the agent contacts the case manager for the missing items.")
-label_say("For the missing items, the agent first drafts an email to the case manager, ready for a "
-          "person to approve and send. When email goes unanswered, it picks up the phone.")
-body("At this point the agent places a live outbound call to collect the outstanding details. "
-     "Put the call on speaker so the audience can hear it.")
-label_say("Listen for a few things: it reads the claim number clearly, it confirms the physician’s "
-          "identifier is complete, it repeats each item back to me — and then it thanks me and "
-          "closes the call properly. No awkward silences, no abrupt hang-up.")
-label_say("And now — only once the call has actually gone out — the transcript appears, "
-          "logged automatically against this referral.")
+heading("5.  Live Observability — proof the guardrails work")
+nav("Hub → “Live Observability Dashboard.”")
+see("Live telemetry (throughput, latency, AI quality, knowledge-graph outcomes, cost) PLUS two things to look at: a per-referral detail table — every episode’s latency and factors individually, with outliers flagged — and a “Guardrail Verification” list of the cases the agent handled autonomously, no human, available for spot-check.")
+why("It demonstrates the guardrails are working AND that they’re auditable: you can see exactly which cases the agent cleared on its own and open any one to verify the decision. Not just an average — every referral, inspectable.")
+body("The live event log on this dashboard also cites each decision to its SOP clause (e.g. “per SOP §2.1”) — so you can watch your SOPs being applied as the agent runs.")
 
 # ── 6 ──
-heading("6.  The complete record — and the audit trail")
-nav("Advance to “Step 07 — Route Output” to show the finished record. Then click the “Coastal DME” "
-    "name at the top-left to return to the Hub, and open the “Observability Dashboard” card; drill "
-    "into the episode to show its audit trail.")
-label_screen("The final referral record, then the audit trail for the same referral.")
-label_say("Every field populated, every gap resolved — by email, by phone, or by the agent’s "
-          "own correction. The moment this record locks, it’s ready to dispatch.")
-label_say("And this is the part the compliance and technology leads care about. For any referral you "
-          "get the full trace: what the agent read, which rules fired and their citations, its "
-          "confidence at each decision, the jurisdiction logic, and every outreach action taken.")
-key("Defensibility is one click, not an investigation.")
+heading("6.  Scale, cost & management view")
+nav("Hub → “Referral Analytics”, then “Scale & Cost Calculator.”")
+see("Analytics: auto-route and escalation rates, confidence tiers, jurisdiction mix, and the most common gaps. Scale & Cost: change the inputs and watch time and cost move — ~3¢ per referral (measured), throughput scaling with concurrency.")
+why("Answers the two executive questions — “does it hold up at volume, and what does it cost?” — with numbers you can move yourself, and a management view of where work concentrates.")
 
 # ── 7 ──
-heading("7.  Intake by fax — live")
-nav("Return to the Hub and open the “Launch POC” card again (the live agent screen). Click the "
-    "“Receive New Fax” button near the top to show the live intake fax number.")
-label_screen("The incoming-fax panel, showing the live intake fax number.")
-label_say("Intake doesn’t only come from a neat queue — a great deal of it still arrives by "
-          "fax. This is our live intake line. Fax a referral package — the three documents "
-          "together — to this number, and it lands in the processing queue automatically; the "
-          "agent begins working on it within about thirty seconds.")
-body("You can demonstrate this live by faxing a package to the number on screen and watching a new "
-     "row appear at the top of the queue, or use the on-screen sample to show the same flow.")
+heading("7.  The bigger picture")
+nav("Hub → “8-Agent Value Chain.”")
+see("Referral-to-payment as eight modular agents; intake (what you just explored) is Agent 1, built and live. The rest are the roadmap, each deployable on its own.")
+why("Frames today’s agent as the first step of a chain — not a one-off — deployable in your environment.")
 
-# ── 8 ──
-heading("8.  Scale and cost — the honest version")
-nav("Return to the Hub and click the “Scale & Cost Calculator” card.")
-label_screen("The scale-and-cost view, with adjustable inputs.")
-label_say("The question every leader asks: does this hold up at volume, and what does it cost? "
-          "Here’s the honest answer — and you can change the inputs yourself.")
-body("Walk the three scenarios: today’s standard configuration; a scaled, real-time "
-     "configuration that processes roughly ten thousand referrals in about seven minutes; and an "
-     "asynchronous batch mode at roughly half the per-referral cost for non-urgent volume.")
-key("Cost is a few cents per referral, measured on the actual run — not estimated — and the "
-    "numbers move the moment you change the inputs. We add capacity; there is no hidden cap.")
+# ── close ──
+heading("In one line")
+body("A working agent on real referral packages: it reads, validates against cited rules, knows its own "
+     "confidence, escalates instead of guessing, runs off your SOPs, reaches out by email and phone, and "
+     "logs every decision for audit — with the guardrails visible and inspectable. The natural next step is a "
+     "48-hour proof on a sample of your own intake packages — no integration, nothing sensitive shared.")
 
-# ── 9 ──
-heading("9.  The broader layer (optional)")
-nav("From the Hub, the “Live Observability Dashboard,” “Referral Analytics & Insights,” and "
-    "“Coached Intake Simulator” cards — open whichever the audience is most interested in.")
-label_screen("Live metrics, analytics, and the training module.")
-label_say("The agent is one layer. Around it you get live observability, an analytics view of trends "
-          "like escalation and auto-routing rates, and a path to bring your associates along — "
-          "so this augments your team rather than becoming a black box.")
+heading("A few tips while you explore", 13)
+for tip in [
+    "Click “Start Live Processing” before expecting the queue or observability to fill — the screen updates during a run.",
+    "Any completed row opens its full pipeline (same view as the Holloway example).",
+    "The Voice step dials a demo line; you don’t need to do anything — just watch the call status and transcript.",
+    "Don’t refresh the live agent screen mid-run — it resets the queue.",
+]:
+    p = doc.add_paragraph(style="List Bullet"); p.paragraph_format.space_after = Pt(3); p.add_run(tip).font.size = Pt(10.5)
 
-# ── 10 ──
-heading("10.  Closing")
-nav("Close from wherever you are — no navigation needed.")
-label_say("What you’ve seen is a working proof of concept on real referral packages. It reads, it "
-          "validates against cited rules, it knows its own confidence, it escalates instead of "
-          "guessing, it reaches out by email and by phone, it takes in faxes live, and it logs every "
-          "step for audit. The next step isn’t ‘will it work’ — you’ve just "
-          "watched it. The next step is to run it on a sample of your own intake packages, with no "
-          "integration and nothing sensitive shared, so we start from your data.")
-
-# ── cheat sheet ──
-heading("Quick reference — lines to land", 13)
-data = [
-    ("Why it’s credible", "It shows its work at every step."),
-    ("The escalation moment", "The agent does not guess — that restraint is the feature."),
-    ("For compliance", "Defensibility is one click, not an investigation."),
-    ("The phone call", "It reads clearly, confirms each item, thanks the caller, and closes — no dead air."),
-    ("On cost", "A few cents per referral, measured — and the numbers move when you move the inputs."),
-    ("On scale", "We add capacity, not magic."),
-    ("The close", "The question isn’t ‘will it work.’ You just watched it."),
-]
-table = doc.add_table(rows=1, cols=2)
-table.style = "Light Grid Accent 1"
-hdr = table.rows[0].cells
-hdr[0].paragraphs[0].add_run("Moment").bold = True
-hdr[1].paragraphs[0].add_run("Line to land").bold = True
-for moment, line in data:
-    cells = table.add_row().cells
-    cells[0].text = moment
-    cells[1].text = line
-
-# Save to Desktop and deliverables
-import os
-desktop = Path(os.path.join(os.path.expanduser("~"), "Desktop"))
-out1 = desktop / "Intake Agent - Demo Walkthrough.docx"
-out2 = Path(__file__).parent / "deliverables" / "poc_walkthrough_external.docx"
-doc.save(str(out1))
-doc.save(str(out2))
+desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+out1 = os.path.join(desktop, "Live Intake and Referral Agent - Self-Guided Walkthrough.docx")
+out2 = os.path.join(os.path.dirname(__file__), "deliverables", "self_guided_walkthrough.docx")
+doc.save(out1); doc.save(out2)
 print("Saved:", out1)
 print("Saved:", out2)
