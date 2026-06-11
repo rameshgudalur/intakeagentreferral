@@ -577,6 +577,20 @@ def api_status():
         state["stats"] = dict(_state["stats"])
         state["queue"] = list(_state["queue"])
         state["events"] = list(_state["events"])
+    # ── Reconcile counts with the actual queue ────────────────────────────────
+    # A fax/voice referral that arrives during or after the batch adds a queue row
+    # (inbound bumps total, the sample trigger doesn't), which previously showed a
+    # phantom "40 processed, 1 still to be processed". Derive the counts from what's
+    # really in the queue, and keep polling while anything is still in flight.
+    _q = state["queue"]
+    if _q:
+        _terminal = {"routed", "gaps", "linked", "error"}
+        state["total"] = len(_q)
+        state["processed"] = sum(1 for q in _q if q.get("status") in _terminal)
+        if state["status"] == "complete" and any(
+                q.get("status") in ("queued", "processing") for q in _q):
+            state["status"] = "running"   # a late arrival is still processing
+
     # Add timing
     if state["start_time"] and state["status"] == "running":
         state["elapsed_sec"] = round(time.time() - state["start_time"], 1)
