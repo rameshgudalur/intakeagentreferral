@@ -722,11 +722,13 @@ def audit_view(claim):
 def api_analytics():
     import policy
     from collections import Counter
-    # Scope analytics to the demo referral set so the numbers reconcile with the
-    # live 40-referral run. output/ also accumulates historical/other claims
-    # (75- and 1000-referral generators, voice/fax episodes), which previously
-    # inflated the episode count (e.g. 78). One sidecar per claim (latest wins).
-    DEMO_PREFIX = "WC-2026-084"
+    # Scope analytics to the EXACT 40 referrals the live run processes (api_start
+    # uses sorted WC-2026-084* folders[:40]). output/ accumulates far more
+    # (there are 75 WC-2026-084 folders + 75-/1000-referral generators + voice/fax
+    # episodes), which inflated the count (78 / 75). One sidecar per claim (latest wins).
+    demo_claims = set(sorted(
+        d.name for d in REFERRALS_DIR.iterdir()
+        if d.is_dir() and d.name.startswith("WC-2026-084"))[:40])
     latest = {}
     for p in OUTPUT_DIR.glob("fields-*.json"):
         try:
@@ -740,7 +742,7 @@ def api_analytics():
             stem = p.stem.split("-", 1)[-1]      # "<claim>-YYYY-MM-DD"
             toks = stem.rsplit("-", 3)
             key = "-".join(toks[:-3]) if len(toks) >= 4 else stem
-        if not str(key).startswith(DEMO_PREFIX):
+        if key not in demo_claims:
             continue
         mt = p.stat().st_mtime
         if key not in latest or mt > latest[key][0]:
