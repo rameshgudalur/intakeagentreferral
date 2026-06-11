@@ -803,6 +803,10 @@ def api_analytics():
 def panel_analytics():
     return render_template("analytics.html")
 
+@app.route("/panel/sops")
+def panel_sops():
+    return render_template("sops.html")
+
 
 @app.route("/api/episodes")
 def api_episodes():
