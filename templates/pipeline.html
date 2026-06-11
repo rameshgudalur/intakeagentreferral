@@ -441,28 +441,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="doc-icon">&#x1F4C4;</div>
           <div class="doc-info"><div class="doc-name">{{ f }}</div><div class="doc-meta">Parsed · {{ loop.index * 3 }} pages extracted</div></div>
           <div class="doc-tbadge dtb-ref">Referral Form</div>
-          <div class="doc-ok">&#x2713; Received</div>
+          <a class="doc-ok" href="/referrals/{{ claim }}/{{ f }}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer">&#x1F441;&#xFE0F; View</a>
         </div>
         {% elif 'clinical' in f.lower() or 'notes' in f.lower() %}
         <div class="doc-row ok">
           <div class="doc-icon">&#x1F4CB;</div>
           <div class="doc-info"><div class="doc-name">{{ f }}</div><div class="doc-meta">Parsed · {{ loop.index * 2 + 1 }} pages extracted</div></div>
           <div class="doc-tbadge dtb-clin">Clinical Notes</div>
-          <div class="doc-ok">&#x2713; Received</div>
+          <a class="doc-ok" href="/referrals/{{ claim }}/{{ f }}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer">&#x1F441;&#xFE0F; View</a>
         </div>
         {% elif 'prescri' in f.lower() or 'rx' in f.lower() %}
         <div class="doc-row ok">
           <div class="doc-icon">&#x1F48A;</div>
           <div class="doc-info"><div class="doc-name">{{ f }}</div><div class="doc-meta">Parsed · {{ loop.index + 1 }} pages extracted</div></div>
           <div class="doc-tbadge dtb-rx">Prescription</div>
-          <div class="doc-ok">&#x2713; Received</div>
+          <a class="doc-ok" href="/referrals/{{ claim }}/{{ f }}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer">&#x1F441;&#xFE0F; View</a>
         </div>
         {% else %}
         <div class="doc-row ok">
           <div class="doc-icon">&#x1F4C4;</div>
           <div class="doc-info"><div class="doc-name">{{ f }}</div><div class="doc-meta">Parsed · supporting document</div></div>
           <div class="doc-tbadge dtb-other">Supporting</div>
-          <div class="doc-ok">&#x2713; Received</div>
+          <a class="doc-ok" href="/referrals/{{ claim }}/{{ f }}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer">&#x1F441;&#xFE0F; View</a>
         </div>
         {% endif %}
       {% else %}
