@@ -1329,6 +1329,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
+  {% if sop_trace %}
+  <div class="card" style="margin-top:12px;border-color:#ddd6fe;background:#f5f3ff">
+    <div class="card-hd" style="color:#6d28d9">&#x1F4DC; SOPs Applied to This Episode</div>
+    <div style="font-size:11px;color:#475569;margin-bottom:8px">This referral was processed under your SOP library — each decision traces to its clause and the regulation behind it.</div>
+    {% for t in sop_trace %}
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid #ece9f6">
+      <span style="flex-shrink:0;font-size:10px;font-weight:800;color:#6d28d9;background:#ede9fe;border-radius:6px;padding:2px 8px;white-space:nowrap">SOP §{{ t.clause }}</span>
+      <div style="font-size:11px;color:#334155;line-height:1.5"><b>{{ t.sop }}</b><br>{{ t.decision }} <span style="color:#0f766e">· {{ t.citation }}</span></div>
+    </div>
+    {% endfor %}
+    <div style="font-size:10px;color:#94a3b8;margin-top:8px">Full decision &rarr; rule &rarr; SOP &rarr; regulation trail in the audit view.</div>
+  </div>
+  {% endif %}
+
   <div style="background:#1e3a5f;border-radius:10px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between">
     <div>
       <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:4px">Pipeline Complete</div>

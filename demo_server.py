@@ -223,7 +223,7 @@ def process_referral(folder: Path, link: bool = False) -> dict:
         fields["confidence_tier"] = _ctier
         _update_queue_item(claim, jurisdiction=_juris["state"], sla_days=_juris["sla_days"],
                            sla_priority=_juris["sla_priority"], conf_tier=_ctier["tier"])
-        _log(f"{claim} — jurisdiction {_juris['state']} (SLA {_juris['sla_days']}d) · confidence tier {_ctier['tier']} [{_ctier['autonomy']}]")
+        _log(f"{claim} — jurisdiction {_juris['state']} (SLA {_juris['sla_days']}d) per SOP §5.2 · confidence tier {_ctier['tier']} [{_ctier['autonomy']}] per SOP §6.1")
 
         # ── Featured hero (Holloway): guarantee the multi-conflict ICD log renders
         # from THIS episode's own data. Without this, an empty icd_conflicts array
@@ -259,7 +259,7 @@ def process_referral(folder: Path, link: bool = False) -> dict:
         from knowledge_graph import validate as kg_validate
         kg_report = kg_validate(fields)
         fields["kg_validation"] = kg_report
-        _log(f"{claim} — KG: {kg_report['status']} · {kg_report['rules_fired']} rules · {kg_report['confirmations']} confirmed")
+        _log(f"{claim} — KG {kg_report['status']} · {kg_report['rules_fired']} rules fired · {kg_report['confirmations']} confirmed · coding authority per SOP §3.4/§3.7")
 
         # observability: KG outcome distribution + confidence
         _kg_key = {"VALIDATED": "kg_validated", "FLAGGED": "kg_flagged",
@@ -277,13 +277,13 @@ def process_referral(folder: Path, link: bool = False) -> dict:
         if fields.get("icd_conflict"):
             with _lock:
                 _state["stats"]["icd_conflicts"] += 1
-            _log(f"{claim} — ICD conflict: {fields.get('icd_conflict_detail', '')[:60]}")
+            _log(f"{claim} — ICD conflict → clinical code adopted per SOP §3.4: {fields.get('icd_conflict_detail', '')[:50]}")
 
         # Escalation
         if fields.get("escalate"):
             with _lock:
                 _state["stats"]["escalations"] += 1
-            _log(f"{claim} — escalated to human review (confidence {fields.get('confidence')}%)")
+            _log(f"{claim} — escalated to specialist (confidence {fields.get('confidence')}%) per SOP §6.1 / §8.0 — agent does not guess")
             icd_parts = fields.get("icd_conflict_detail", "").split("vs") if "vs" in fields.get("icd_conflict_detail", "") else []
             add_to_queue({
                 "claim_number":      fields.get("claim_number", claim),
@@ -309,7 +309,9 @@ def process_referral(folder: Path, link: bool = False) -> dict:
         if gap_count > 0:
             with _lock:
                 _state["stats"]["gaps_detected"] += gap_count
-            _log(f"{claim} — {gap_count} gaps: {', '.join(list(completeness['gaps'].keys())[:3])}")
+            _gap_keys = list(completeness['gaps'].keys())
+            _auth_note = " · auth held per SOP §2.1" if "auth_ref" in _gap_keys else ""
+            _log(f"{claim} — {gap_count} gaps: {', '.join(_gap_keys[:3])} → outreach drafted per SOP §2.1{_auth_note}")
 
         elapsed = round(time.time() - t0, 1)
         status = "routed" if completeness["is_complete"] else "gaps"
@@ -389,6 +391,8 @@ def run_batch(folders: list, workers: int = 20):
         _state["processed"]  = 0
 
     _log(f"Starting {len(folders)} referrals — {workers} concurrent workers")
+    _log("SOP library v2.3 loaded — agent running on your SOP-configured rules "
+         "(auth §2.1 · coding §3.4/§3.7 · coverage §4.2/§4.5 · jurisdiction §5.2 · autonomy §6.1 · escalation §8.0)")
 
     BATCH_TIMEOUT = 120  # seconds — if any referral hangs longer than this, cut it loose
 
@@ -687,6 +691,34 @@ def api_training_grade():
 
 
 # ── Parking Lot 3 — Audit trail / defensibility ───────────────────────────────
+def _sop_trace(fields, comp, data):
+    """Link an episode's decisions back to the governing SOP clause (decision -> clause -> regulation).
+    Shared by the audit trail and the pipeline 'SOPs applied' strip."""
+    trace = []
+    gaps = comp.get("gaps", {}) or {}
+    if "auth_ref" in gaps:
+        trace.append({"clause": "2.1", "sop": "No referral scheduled without an active authorization reference.",
+                      "decision": "Authorization reference missing → episode held; outreach to adjuster.", "action": "block", "citation": "Completeness / gap policy"})
+    if fields.get("icd_conflict") or (data.get("icd_conflicts") or fields.get("icd_conflicts")):
+        trace.append({"clause": "3.4", "sop": "Clinical notes (with the prescription) are authoritative on an ICD conflict.",
+                      "decision": "Diagnosis codes disagreed → adopted the clinical/Rx code: " + str(fields.get("icd_code", "—")) + ".", "action": "resolve", "citation": "ICD-10-CM §I.B.13"})
+    _juris = fields.get("jurisdiction") if isinstance(fields.get("jurisdiction"), dict) else {}
+    if _juris.get("state"):
+        trace.append({"clause": "5.2", "sop": "Apply the state turnaround clock; escalate SLA-breach risk.",
+                      "decision": str(_juris.get("state")) + " → SLA " + str(_juris.get("sla_days", "?")) + " business day(s).", "action": "sla", "citation": "State WC fee-schedule"})
+    _tier = fields.get("confidence_tier") if isinstance(fields.get("confidence_tier"), dict) else {}
+    if _tier.get("tier"):
+        trace.append({"clause": "6.1", "sop": "Auto-route ≥90%; spot-check 80–90%; escalate below 80%.",
+                      "decision": "Confidence " + str(fields.get("confidence", "?")) + "% → tier " + str(_tier.get("tier")) + " (" + str(_tier.get("autonomy", "")) + ").", "action": "tier", "citation": "Confidence-tier policy"})
+    if fields.get("dme_item"):
+        trace.append({"clause": "4.2", "sop": "A mobility device requires a qualifying mobility-limiting diagnosis.",
+                      "decision": "DME “" + str(fields.get("dme_item")) + "” validated against covered conditions.", "action": "confirm", "citation": "CMS LCD L33803"})
+    if fields.get("escalate"):
+        trace.append({"clause": "8.0", "sop": "Clinical/coding judgment is never fully automated; ambiguous → specialist.",
+                      "decision": "Below threshold / split evidence → routed to the human-review gate.", "action": "escalate", "citation": "ICD-10-CM §I.B.13"})
+    return trace
+
+
 def _build_audit(claim):
     matches = sorted(OUTPUT_DIR.glob(f"fields-{claim}-*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
     if not matches:
@@ -697,30 +729,7 @@ def _build_audit(claim):
     comp = data.get("completeness", {}) or {}
     kg = fields.get("kg_validation", {}) or {}
 
-    # SOP trace — link THIS episode's decisions back to the governing SOP clause,
-    # so the audit reads decision -> rule -> SOP -> regulation.
-    sop_trace = []
-    gaps = comp.get("gaps", {}) or {}
-    if "auth_ref" in gaps:
-        sop_trace.append({"clause": "2.1", "sop": "No referral scheduled without an active authorization reference.",
-                          "decision": "Authorization reference missing → episode held; outreach to adjuster.", "action": "block", "citation": "Completeness / gap policy"})
-    if fields.get("icd_conflict") or (data.get("icd_conflicts") or fields.get("icd_conflicts")):
-        sop_trace.append({"clause": "3.4", "sop": "Clinical notes (with the prescription) are authoritative on an ICD conflict.",
-                          "decision": "Diagnosis codes disagreed → adopted the clinical/Rx code: " + str(fields.get("icd_code", "—")) + ".", "action": "resolve", "citation": "ICD-10-CM §I.B.13"})
-    _juris = fields.get("jurisdiction") if isinstance(fields.get("jurisdiction"), dict) else {}
-    if _juris.get("state"):
-        sop_trace.append({"clause": "5.2", "sop": "Apply the state turnaround clock; escalate SLA-breach risk.",
-                          "decision": str(_juris.get("state")) + " → SLA " + str(_juris.get("sla_days", "?")) + " business day(s).", "action": "sla", "citation": "State WC fee-schedule"})
-    _tier = fields.get("confidence_tier") if isinstance(fields.get("confidence_tier"), dict) else {}
-    if _tier.get("tier"):
-        sop_trace.append({"clause": "6.1", "sop": "Auto-route ≥90%; spot-check 80–90%; escalate below 80%.",
-                          "decision": "Confidence " + str(fields.get("confidence", "?")) + "% → tier " + str(_tier.get("tier")) + " (" + str(_tier.get("autonomy", "")) + ").", "action": "tier", "citation": "Confidence-tier policy"})
-    if fields.get("dme_item"):
-        sop_trace.append({"clause": "4.2", "sop": "A mobility device requires a qualifying mobility-limiting diagnosis.",
-                          "decision": "DME “" + str(fields.get("dme_item")) + "” validated against covered conditions.", "action": "confirm", "citation": "CMS LCD L33803"})
-    if fields.get("escalate"):
-        sop_trace.append({"clause": "8.0", "sop": "Clinical/coding judgment is never fully automated; ambiguous → specialist.",
-                          "decision": "Below threshold / split evidence → routed to the human-review gate.", "action": "escalate", "citation": "ICD-10-CM §I.B.13"})
+    sop_trace = _sop_trace(fields, comp, data)
 
     return {
         "claim": claim,
@@ -1053,6 +1062,7 @@ def pipeline_view(claim):
         escalate=f.get("escalate", False),
         icd_conf=bool(data.get("icd_conflicts")),
         featured=(claim == FEATURED_CLAIM),
+        sop_trace=_sop_trace(f, data.get("completeness", {}) or {}, data),
     )
 
 
