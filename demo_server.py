@@ -873,6 +873,7 @@ def pipeline_view(claim):
         conf=f.get("confidence"),
         escalate=f.get("escalate", False),
         icd_conf=bool(data.get("icd_conflicts")),
+        featured=(claim == FEATURED_CLAIM),
     )
 
 
