@@ -696,8 +696,35 @@ def _build_audit(claim):
     fields = data.get("fields", {}) or {}
     comp = data.get("completeness", {}) or {}
     kg = fields.get("kg_validation", {}) or {}
+
+    # SOP trace — link THIS episode's decisions back to the governing SOP clause,
+    # so the audit reads decision -> rule -> SOP -> regulation.
+    sop_trace = []
+    gaps = comp.get("gaps", {}) or {}
+    if "auth_ref" in gaps:
+        sop_trace.append({"clause": "2.1", "sop": "No referral scheduled without an active authorization reference.",
+                          "decision": "Authorization reference missing → episode held; outreach to adjuster.", "action": "block", "citation": "Completeness / gap policy"})
+    if fields.get("icd_conflict") or (data.get("icd_conflicts") or fields.get("icd_conflicts")):
+        sop_trace.append({"clause": "3.4", "sop": "Clinical notes (with the prescription) are authoritative on an ICD conflict.",
+                          "decision": "Diagnosis codes disagreed → adopted the clinical/Rx code: " + str(fields.get("icd_code", "—")) + ".", "action": "resolve", "citation": "ICD-10-CM §I.B.13"})
+    _juris = fields.get("jurisdiction") if isinstance(fields.get("jurisdiction"), dict) else {}
+    if _juris.get("state"):
+        sop_trace.append({"clause": "5.2", "sop": "Apply the state turnaround clock; escalate SLA-breach risk.",
+                          "decision": str(_juris.get("state")) + " → SLA " + str(_juris.get("sla_days", "?")) + " business day(s).", "action": "sla", "citation": "State WC fee-schedule"})
+    _tier = fields.get("confidence_tier") if isinstance(fields.get("confidence_tier"), dict) else {}
+    if _tier.get("tier"):
+        sop_trace.append({"clause": "6.1", "sop": "Auto-route ≥90%; spot-check 80–90%; escalate below 80%.",
+                          "decision": "Confidence " + str(fields.get("confidence", "?")) + "% → tier " + str(_tier.get("tier")) + " (" + str(_tier.get("autonomy", "")) + ").", "action": "tier", "citation": "Confidence-tier policy"})
+    if fields.get("dme_item"):
+        sop_trace.append({"clause": "4.2", "sop": "A mobility device requires a qualifying mobility-limiting diagnosis.",
+                          "decision": "DME “" + str(fields.get("dme_item")) + "” validated against covered conditions.", "action": "confirm", "citation": "CMS LCD L33803"})
+    if fields.get("escalate"):
+        sop_trace.append({"clause": "8.0", "sop": "Clinical/coding judgment is never fully automated; ambiguous → specialist.",
+                          "decision": "Below threshold / split evidence → routed to the human-review gate.", "action": "escalate", "citation": "ICD-10-CM §I.B.13"})
+
     return {
         "claim": claim,
+        "sop_trace": sop_trace,
         "generated_at": datetime.datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="seconds"),
         "episode": {k: fields.get(k, "") for k in ("patient_name", "claim_number", "dob",
                     "dme_item", "hcpcs", "icd_code", "icd_description", "insurance_carrier", "adjuster_name")},
@@ -806,6 +833,65 @@ def panel_analytics():
 @app.route("/panel/sops")
 def panel_sops():
     return render_template("sops.html")
+
+_SOP_PATH = BASE_DIR / "sops" / "coastal_intake_sop.md"
+
+# Cached extraction — used as a fallback so the demo never fails if the live call errors.
+_SOP_RULES_FALLBACK = [
+    {"clause": "2.1", "sop": "No referral scheduled without an active authorization reference.", "agent": "Treats auth_ref as a hard-block gap; requests it from the adjuster and holds the episode until received.", "field": "auth_ref", "action": "block", "citation": "Completeness / gap policy"},
+    {"clause": "3.4", "sop": "Clinical notes (with the prescription) are authoritative on an ICD conflict.", "agent": "Adopts the clinical/Rx code over the referral-form code and documents the override.", "field": "icd_code", "action": "resolve", "citation": "ICD-10-CM §I.B.13 — Laterality"},
+    {"clause": "3.7", "sop": "Post-injury surgery: code the acute injury (S-codes), not degenerative M-codes.", "agent": "Rejects the M-code where an S-code applies (e.g. S83.209A) and selects the trauma code.", "field": "icd_code", "action": "reject", "citation": "ICD-10-CM §I.C.19.a"},
+    {"clause": "4.2", "sop": "A mobility device requires a qualifying mobility-limiting diagnosis on file.", "agent": "Validates the diagnosis against the covered-condition list before routing.", "field": "dme_item", "action": "confirm", "citation": "CMS LCD L33803 — Walkers"},
+    {"clause": "4.5", "sop": "Confirm weight before dispatch; over 300 lbs requires a bariatric unit.", "agent": "Flags missing/over-threshold weight (E0143 → E0149) and collects the spec on outreach.", "field": "dme_item", "action": "flag", "citation": "CMS LCD L33803 — Weight capacity"},
+    {"clause": "5.2", "sop": "Texas referrals actioned within 2 business days; escalate SLA-breach risk.", "agent": "Detects the state, starts the SLA clock (TX = 2 days), prioritizes, and escalates breach risk.", "field": "jurisdiction", "action": "sla", "citation": "State WC fee-schedule"},
+    {"clause": "6.1", "sop": "Auto-route ≥90%; spot-check 80–90%; escalate below 80%.", "agent": "Scores its own confidence per episode and routes to the matching autonomy tier.", "field": "confidence", "action": "tier", "citation": "Confidence-tier policy"},
+    {"clause": "8.0", "sop": "Clinical/coding judgment is never fully automated; ambiguous cases go to a specialist.", "agent": "On split evidence or a laterality conflict, stops and routes to the human-review gate.", "field": "escalate", "action": "escalate", "citation": "ICD-10-CM §I.B.13"},
+]
+
+def _load_sop_text():
+    try:
+        return _SOP_PATH.read_text(encoding="utf-8")
+    except Exception:
+        return ""
+
+@app.route("/api/sop-text")
+def api_sop_text():
+    return jsonify({"text": _load_sop_text()})
+
+@app.route("/api/ingest-sop", methods=["POST"])
+def api_ingest_sop():
+    """Run a live LLM extraction of the SOP into structured agent rules. Falls back
+    to the cached extraction on any error so the demo always shows a result."""
+    sop_text = (request.json.get("text") if request.is_json else None) or _load_sop_text()
+    if not sop_text.strip():
+        return jsonify({"source": "fallback", "rules": _SOP_RULES_FALLBACK})
+    prompt = (
+        "You are configuring a workers'-compensation DME intake AI agent from a client's written SOP. "
+        "Extract each rule-like clause into a structured rule the agent can enforce. "
+        "Return ONLY a JSON array (no prose, no markdown code fences). Each element is an object with keys: "
+        "clause (the SOP section number, e.g. '2.1'), "
+        "sop (a one-line paraphrase of the clause), "
+        "agent (what the agent does to enforce it, one sentence), "
+        "field (the primary data field it governs, or 'n/a'), "
+        "action (exactly one of: block, resolve, reject, confirm, flag, sla, tier, escalate), "
+        "citation (the governing CMS / ICD-10 / LCD authority if applicable, else 'SOP policy'). "
+        "SOP DOCUMENT:\n\n" + sop_text
+    )
+    try:
+        from intake_agent import _call_claude
+        raw = _call_claude(prompt, max_tokens=2000).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```", 2)[1]
+            if raw.lstrip().lower().startswith("json"):
+                raw = raw.lstrip()[4:]
+        start, end = raw.find("["), raw.rfind("]")
+        rules = json.loads(raw[start:end+1]) if start >= 0 and end > start else None
+        if isinstance(rules, list) and rules:
+            _log(f"SOP ingested live — {len(rules)} rules extracted")
+            return jsonify({"source": "live", "rules": rules})
+    except Exception as e:
+        _log(f"SOP ingest fell back to cache — {str(e)[:80]}")
+    return jsonify({"source": "fallback", "rules": _SOP_RULES_FALLBACK})
 
 
 @app.route("/api/episodes")

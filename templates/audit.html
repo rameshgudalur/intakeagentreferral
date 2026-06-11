@@ -112,8 +112,14 @@ function render(d){
   // docs
   if((d.source_documents||[]).length){ h+=`<div class="seclabel">Source Documents</div><div class="docs">${d.source_documents.map(x=>`<span>&#x1F4C4; ${esc(x)}</span>`).join('')}</div>`; }
   if((d.linked_docs||[]).length){ h+=`<div class="foot">Linked supplemental documents: ${d.linked_docs.map(esc).join(', ')}</div>`; }
+  // SOP trace — decision → clause → regulation
+  if((d.sop_trace||[]).length){
+    h+='<div class="seclabel">Traced to SOP — decision &rarr; clause &rarr; regulation</div>';
+    h+=d.sop_trace.map(t=>`<div class="step esc" style="border-left-color:#7c3aed"><h3>&#x1F4DC; SOP §${esc(t.clause)} <span class="pill p-${mapAct(t.action)}">${esc((t.action||'').toUpperCase())}</span></h3><div class="d"><b>SOP rule:</b> ${esc(t.sop)}<br><b>This episode:</b> ${esc(t.decision)}<br><span class="rs" style="color:#0f766e">Authority: ${esc(t.citation)}</span></div></div>`).join('');
+  }
   document.getElementById('body').innerHTML=h;
 }
+function mapAct(a){ a=(a||'').toLowerCase(); return ({block:'reject',reject:'reject',resolve:'validate',confirm:'confirm',flag:'flag',sla:'validate',tier:'escalate',escalate:'escalate'}[a])||'validate'; }
 function exportJson(){
   if(!REC) return;
   const blob=new Blob([JSON.stringify(REC,null,2)],{type:'application/json'});
