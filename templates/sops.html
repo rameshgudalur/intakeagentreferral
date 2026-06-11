@@ -223,7 +223,7 @@ function ingestSOP(){
         + '<td><span class="act '+(ACT[a]||'a-esc')+'">'+(ACTLBL[a]||esc(r.action||''))+'</span></td></tr>';
     }).join('');
     btn.disabled=false; btn.textContent='⚙ Re-ingest SOP → generate rules';
-    st.innerHTML = (d.source==='live' ? '<span class="live-badge">● Live LLM extraction</span>' : '<span class="cache-badge">● Cached extraction</span>') + ' · '+rules.length+' rules generated from the SOP';
+    st.innerHTML = (d.source==='live' ? '<span class="live-badge">● Live LLM extraction</span>' : '<span class="cache-badge">● Cached extraction</span>') + ' · '+rules.length+' rules generated' + (d.activated ? ' · <b style="color:#15803d">now active in live processing</b>' : '');
   }).catch(()=>{ btn.disabled=false; btn.textContent='⚙ Ingest SOP → generate rules'; st.textContent='Error — try again'; });
 }
 </script>

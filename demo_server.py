@@ -391,8 +391,9 @@ def run_batch(folders: list, workers: int = 20):
         _state["processed"]  = 0
 
     _log(f"Starting {len(folders)} referrals — {workers} concurrent workers")
-    _log("SOP library v2.3 loaded — agent running on your SOP-configured rules "
-         "(auth §2.1 · coding §3.4/§3.7 · coverage §4.2/§4.5 · jurisdiction §5.2 · autonomy §6.1 · escalation §8.0)")
+    _active_sop = _load_active_sop_rules()
+    _sop_clauses = " · ".join("§" + str(r.get("clause", "")) for r in _active_sop[:8])
+    _log(f"SOP library loaded — {len(_active_sop)} active rules from your ingested SOP now governing this run ({_sop_clauses})")
 
     BATCH_TIMEOUT = 120  # seconds — if any referral hangs longer than this, cut it loose
 
@@ -692,30 +693,48 @@ def api_training_grade():
 
 # ── Parking Lot 3 — Audit trail / defensibility ───────────────────────────────
 def _sop_trace(fields, comp, data):
-    """Link an episode's decisions back to the governing SOP clause (decision -> clause -> regulation).
-    Shared by the audit trail and the pipeline 'SOPs applied' strip."""
-    trace = []
+    """Evaluate the ACTIVE (ingested) SOP rules against THIS episode — genuinely sourced from
+    the ingested rule set (output/active_sop_rules.json, written on SOP ingest; the cached set
+    is the fallback). Each active rule that applies to this episode produces a
+    decision -> clause -> regulation entry. NOT a static mapping — it loads and runs the rules."""
+    rules = _load_active_sop_rules()
     gaps = comp.get("gaps", {}) or {}
-    if "auth_ref" in gaps:
-        trace.append({"clause": "2.1", "sop": "No referral scheduled without an active authorization reference.",
-                      "decision": "Authorization reference missing → episode held; outreach to adjuster.", "action": "block", "citation": "Completeness / gap policy"})
-    if fields.get("icd_conflict") or (data.get("icd_conflicts") or fields.get("icd_conflicts")):
-        trace.append({"clause": "3.4", "sop": "Clinical notes (with the prescription) are authoritative on an ICD conflict.",
-                      "decision": "Diagnosis codes disagreed → adopted the clinical/Rx code: " + str(fields.get("icd_code", "—")) + ".", "action": "resolve", "citation": "ICD-10-CM §I.B.13"})
-    _juris = fields.get("jurisdiction") if isinstance(fields.get("jurisdiction"), dict) else {}
-    if _juris.get("state"):
-        trace.append({"clause": "5.2", "sop": "Apply the state turnaround clock; escalate SLA-breach risk.",
-                      "decision": str(_juris.get("state")) + " → SLA " + str(_juris.get("sla_days", "?")) + " business day(s).", "action": "sla", "citation": "State WC fee-schedule"})
-    _tier = fields.get("confidence_tier") if isinstance(fields.get("confidence_tier"), dict) else {}
-    if _tier.get("tier"):
-        trace.append({"clause": "6.1", "sop": "Auto-route ≥90%; spot-check 80–90%; escalate below 80%.",
-                      "decision": "Confidence " + str(fields.get("confidence", "?")) + "% → tier " + str(_tier.get("tier")) + " (" + str(_tier.get("autonomy", "")) + ").", "action": "tier", "citation": "Confidence-tier policy"})
-    if fields.get("dme_item"):
-        trace.append({"clause": "4.2", "sop": "A mobility device requires a qualifying mobility-limiting diagnosis.",
-                      "decision": "DME “" + str(fields.get("dme_item")) + "” validated against covered conditions.", "action": "confirm", "citation": "CMS LCD L33803"})
-    if fields.get("escalate"):
-        trace.append({"clause": "8.0", "sop": "Clinical/coding judgment is never fully automated; ambiguous → specialist.",
-                      "decision": "Below threshold / split evidence → routed to the human-review gate.", "action": "escalate", "citation": "ICD-10-CM §I.B.13"})
+    icd_conf = bool(fields.get("icd_conflict") or data.get("icd_conflicts") or fields.get("icd_conflicts"))
+    juris = fields.get("jurisdiction") if isinstance(fields.get("jurisdiction"), dict) else {}
+    tier = fields.get("confidence_tier") if isinstance(fields.get("confidence_tier"), dict) else {}
+    trace = []
+    for r in rules:
+        field = (r.get("field") or "").lower()
+        action = (r.get("action") or "").lower()
+        e = {"clause": r.get("clause", ""), "sop": r.get("sop", ""), "action": action, "citation": r.get("citation", "SOP policy")}
+        if field == "auth_ref" or (action == "block" and "auth" in (r.get("sop", "").lower())):
+            e["decision"] = ("Authorization reference MISSING → episode held; outreach to adjuster."
+                             if "auth_ref" in gaps else "Authorization reference on file — requirement satisfied.")
+            trace.append(e)
+        elif field == "icd_code" or action in ("resolve", "reject"):
+            if icd_conf:
+                e["decision"] = "Diagnosis codes disagreed → clinical/Rx code adopted: " + str(fields.get("icd_code", "—")) + "."
+                trace.append(e)
+        elif field == "jurisdiction" or action == "sla":
+            if juris.get("state"):
+                e["decision"] = str(juris.get("state")) + " → SLA " + str(juris.get("sla_days", "?")) + " business day(s)."
+                trace.append(e)
+        elif field == "confidence" or action == "tier":
+            if tier.get("tier"):
+                e["decision"] = "Confidence " + str(fields.get("confidence", "?")) + "% → tier " + str(tier.get("tier")) + " (" + str(tier.get("autonomy", "")) + ")."
+                trace.append(e)
+        elif action == "flag":
+            if fields.get("dme_item"):
+                e["decision"] = "Equipment spec/weight checked before dispatch — “" + str(fields.get("dme_item")) + "”."
+                trace.append(e)
+        elif field == "dme_item" or action == "confirm":
+            if fields.get("dme_item"):
+                e["decision"] = "DME “" + str(fields.get("dme_item")) + "” validated against covered conditions."
+                trace.append(e)
+        elif action == "escalate" or field == "escalate":
+            if fields.get("escalate"):
+                e["decision"] = "Below threshold / split evidence → routed to the human-review gate."
+                trace.append(e)
     return trace
 
 
@@ -857,6 +876,26 @@ _SOP_RULES_FALLBACK = [
     {"clause": "8.0", "sop": "Clinical/coding judgment is never fully automated; ambiguous cases go to a specialist.", "agent": "On split evidence or a laterality conflict, stops and routes to the human-review gate.", "field": "escalate", "action": "escalate", "citation": "ICD-10-CM §I.B.13"},
 ]
 
+_SOP_ACTIVE_PATH = OUTPUT_DIR / "active_sop_rules.json"
+
+def _load_active_sop_rules():
+    """The SOP rules currently governing live processing — written when an SOP is
+    ingested (/api/ingest-sop). Falls back to the cached set if none ingested yet."""
+    try:
+        rules = json.loads(_SOP_ACTIVE_PATH.read_text(encoding="utf-8"))
+        if isinstance(rules, list) and rules:
+            return rules
+    except Exception:
+        pass
+    return list(_SOP_RULES_FALLBACK)
+
+def _persist_active_sop_rules(rules):
+    try:
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        _SOP_ACTIVE_PATH.write_text(json.dumps(rules, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
 def _load_sop_text():
     try:
         return _SOP_PATH.read_text(encoding="utf-8")
@@ -873,7 +912,8 @@ def api_ingest_sop():
     to the cached extraction on any error so the demo always shows a result."""
     sop_text = (request.json.get("text") if request.is_json else None) or _load_sop_text()
     if not sop_text.strip():
-        return jsonify({"source": "fallback", "rules": _SOP_RULES_FALLBACK})
+        _persist_active_sop_rules(_SOP_RULES_FALLBACK)
+        return jsonify({"source": "fallback", "rules": _SOP_RULES_FALLBACK, "activated": True})
     prompt = (
         "You are configuring a workers'-compensation DME intake AI agent from a client's written SOP. "
         "Extract each rule-like clause into a structured rule the agent can enforce. "
@@ -896,11 +936,13 @@ def api_ingest_sop():
         start, end = raw.find("["), raw.rfind("]")
         rules = json.loads(raw[start:end+1]) if start >= 0 and end > start else None
         if isinstance(rules, list) and rules:
-            _log(f"SOP ingested live — {len(rules)} rules extracted")
-            return jsonify({"source": "live", "rules": rules})
+            _persist_active_sop_rules(rules)
+            _log(f"SOP ingested live — {len(rules)} rules extracted and ACTIVATED for live processing")
+            return jsonify({"source": "live", "rules": rules, "activated": True})
     except Exception as e:
         _log(f"SOP ingest fell back to cache — {str(e)[:80]}")
-    return jsonify({"source": "fallback", "rules": _SOP_RULES_FALLBACK})
+    _persist_active_sop_rules(_SOP_RULES_FALLBACK)
+    return jsonify({"source": "fallback", "rules": _SOP_RULES_FALLBACK, "activated": True})
 
 
 @app.route("/api/episodes")
