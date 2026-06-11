@@ -970,9 +970,35 @@ def api_ingest_sop():
 
 @app.route("/sop-doc")
 def sop_doc():
-    """Serve the sample SOP as a Word document — the source the agent ingests."""
+    """Download the sample SOP as a Word document — the source the agent ingests."""
     return send_from_directory(str(BASE_DIR / "deliverables"), "coastal_intake_sop.docx",
-                               mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                               mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                               as_attachment=True, download_name="Coastal DME - Intake SOP.docx")
+
+@app.route("/sop-view")
+def sop_view():
+    """Render the SOP as an in-browser web page (always viewable; .docx can be blocked/undownloadable)."""
+    import re as _re, html as _html
+    text = _load_sop_text()
+    out = ["<!doctype html><html><head><meta charset='utf-8'><title>Intake SOP</title>",
+           "<style>body{font-family:Calibri,Arial,sans-serif;max-width:780px;margin:30px auto;padding:0 22px;"
+           "color:#1e293b;line-height:1.6} h1{color:#1e3a5f;font-size:23px;margin-bottom:2px} "
+           "h2{color:#1e3a5f;font-size:15px;margin-top:20px} .ver{color:#6d28d9;font-size:12px;font-weight:700} "
+           "p{margin:7px 0;font-size:13px}</style></head><body>"]
+    for ln in text.splitlines():
+        s = ln.strip()
+        if not s:
+            continue
+        if s.startswith("## "):
+            out.append("<h2>" + _html.escape(s[3:]) + "</h2>")
+        elif s.startswith("# "):
+            out.append("<h1>" + _html.escape(s[2:]) + "</h1>")
+        else:
+            esc = _re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _html.escape(s))
+            cls = " class='ver'" if s.startswith("**Version") else ""
+            out.append("<p" + cls + ">" + esc + "</p>")
+    out.append("</body></html>")
+    return "\n".join(out)
 
 def _sop_ingested():
     """True once an SOP has been ingested this session (active_sop_rules.json written)."""
