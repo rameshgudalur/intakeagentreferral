@@ -48,6 +48,21 @@
   .log .e .t { color: #64748b; margin-right: 8px; }
   .note { font-size: 11px; color: #94a3b8; margin-top: 16px; font-style: italic; }
   @media (max-width: 800px) { .grid { grid-template-columns: repeat(2,1fr); } .row2 { grid-template-columns: 1fr; } }
+
+  .ep-wrap { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:4px; max-height:360px; overflow:auto; }
+  table.ep { width:100%; border-collapse:collapse; font-size:11.5px; }
+  table.ep th { position:sticky; top:0; background:#f8fafc; text-align:left; padding:8px 10px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:#64748b; border-bottom:1px solid #e2e8f0; z-index:1; }
+  table.ep td { padding:7px 10px; border-bottom:1px solid #f1f5f9; color:#334155; white-space:nowrap; }
+  table.ep tr:hover td { background:#f8fafc; }
+  .badge { font-size:9px; font-weight:800; padding:2px 7px; border-radius:20px; }
+  .b-route { background:#dcfce7; color:#15803d; } .b-gaps { background:#fef9c3; color:#854d0e; } .b-esc { background:#ede9fe; color:#6d28d9; } .b-err { background:#fee2e2; color:#b91c1c; }
+  .b-val { background:#dcfce7; color:#15803d; } .b-flag { background:#fef9c3; color:#854d0e; } .b-rej { background:#fee2e2; color:#b91c1c; }
+  td.hot { color:#b45309; font-weight:800; } td.lowconf { color:#b91c1c; font-weight:800; }
+  .ep-link { color:#2563eb; text-decoration:none; font-weight:700; }
+  .verify-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; }
+  .verify-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+  .verify-hd .vt { font-size:13px; font-weight:800; color:#0f172a; }
+  .verify-pill { font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; background:#dcfce7; color:#15803d; }
 </style>
 </head>
 <body>
@@ -101,7 +116,33 @@
       <div class="log" id="log"></div>
     </div>
   </div>
-  <div class="note">Polls <code>/api/metrics</code> + <code>/api/status</code> every 2s · events also persisted to <code>output/obs_events.jsonl</code> (append-only audit log).</div>
+  <div class="seclabel">Per-Referral Detail &mdash; Every Episode (latency &amp; factors, not just averages)</div>
+  <div class="ep-wrap">
+    <table class="ep">
+      <thead><tr>
+        <th>Claim</th><th>Patient</th><th>Latency</th><th>Confidence</th><th>KG</th><th>Gaps</th><th>Juris / SLA</th><th>Outcome</th><th></th>
+      </tr></thead>
+      <tbody id="epBody"><tr><td colspan="9" style="color:#94a3b8;padding:14px">Run the POC to populate per-referral detail&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <div class="note" id="epNote">Each referral individually &mdash; spot the outlier, not just the average. Latency outliers (amber) and confidence &lt;80% (red) are highlighted.</div>
+
+  <div class="seclabel">Guardrail Verification &mdash; Cases Handled Autonomously (no human)</div>
+  <div class="verify-card">
+    <div class="verify-hd">
+      <div class="vt">Auto-handled by the agent &mdash; available for human spot-check</div>
+      <div class="verify-pill" id="autoPill">0 auto &middot; 0 escalated</div>
+    </div>
+    <div class="ep-wrap" style="max-height:300px">
+      <table class="ep">
+        <thead><tr><th>Claim</th><th>Patient</th><th>Confidence</th><th>KG</th><th>Decision</th><th>Verify</th></tr></thead>
+        <tbody id="verifyBody"><tr><td colspan="6" style="color:#94a3b8;padding:14px">No autonomous cases yet&hellip;</td></tr></tbody>
+      </table>
+    </div>
+    <div class="note">These cleared the agent's guardrails (confidence + knowledge-graph) and proceeded without escalation. A reviewer can open any to verify &mdash; demonstrating the guardrails work and that humans can audit every autonomous decision.</div>
+  </div>
+
+  <div class="note">Polls <code>/api/metrics</code> + <code>/api/status</code> + <code>/api/episodes</code> every 2s · events also persisted to <code>output/obs_events.jsonl</code> (append-only audit log).</div>
 </div>
 
 <script>
@@ -139,6 +180,46 @@ async function tick(){
     const ev = (st.events||[]).slice(-25).reverse();
     document.getElementById('log').innerHTML = ev.map(e =>
       '<div class="e"><span class="t">'+e.ts+'</span>'+ (e.msg||'').replace(/</g,'&lt;') +'</div>').join('');
+  } catch(e) {}
+  try {
+    const ep = await (await fetch('/api/episodes')).json();
+    const avg = ep.avg_latency_s || 0;
+    const fmtLat = (s)=> (s==null ? '&mdash;' : s+'s');
+    const kgBadge = (s)=>{ const m={VALIDATED:'b-val',FLAGGED:'b-flag',REJECTED:'b-rej',ESCALATED:'b-esc'}; return '<span class="badge '+(m[(s||'').toUpperCase()]||'')+'">'+(s||'—')+'</span>'; };
+    const outBadge = (e)=> e.escalated ? '<span class="badge b-esc">Escalated</span>'
+      : (e.status==='routed' ? '<span class="badge b-route">Routed</span>'
+      : (e.status==='error' ? '<span class="badge b-err">Error</span>' : '<span class="badge b-gaps">Gaps</span>'));
+    const eps = ep.episodes||[];
+    if (eps.length) {
+      document.getElementById('epBody').innerHTML = eps.map(e=>{
+        const hot = (avg>0 && e.latency_s!=null && e.latency_s > avg*1.5) ? ' class="hot"' : '';
+        const lc = (e.confidence!=null && e.confidence<80) ? ' class="lowconf"' : '';
+        return '<tr>'
+          + '<td style="font-family:monospace;font-size:10px">'+e.claim+'</td>'
+          + '<td>'+(e.patient||'—')+'</td>'
+          + '<td'+hot+'>'+fmtLat(e.latency_s)+'</td>'
+          + '<td'+lc+'>'+(e.confidence!=null? e.confidence+'%':'—')+'</td>'
+          + '<td>'+kgBadge(e.kg_status)+'</td>'
+          + '<td>'+e.gaps+'</td>'
+          + '<td>'+(e.jurisdiction||'—')+(e.sla_days? ' · '+e.sla_days+'d':'')+'</td>'
+          + '<td>'+outBadge(e)+'</td>'
+          + '<td><a class="ep-link" href="/pipeline/'+e.claim+'" target="_blank">open &rarr;</a></td>'
+          + '</tr>';
+      }).join('');
+      document.getElementById('epNote').textContent = ep.count+' episodes · avg latency '+avg+'s · rows over '+(avg*1.5).toFixed(1)+'s flagged amber, confidence <80% in red.';
+    }
+    document.getElementById('autoPill').textContent = ep.auto_count+' auto · '+ep.escalated_count+' escalated';
+    const auto = ep.auto_handled||[];
+    if (auto.length) {
+      document.getElementById('verifyBody').innerHTML = auto.map(e=>'<tr>'
+        + '<td style="font-family:monospace;font-size:10px">'+e.claim+'</td>'
+        + '<td>'+(e.patient||'—')+'</td>'
+        + '<td>'+(e.confidence!=null? e.confidence+'%':'—')+'</td>'
+        + '<td>'+kgBadge(e.kg_status)+'</td>'
+        + '<td>'+(e.status==='routed' ? '<span class="badge b-route">Auto-routed</span>' : '<span class="badge b-gaps">Gaps · outreach</span>')+'</td>'
+        + '<td><a class="ep-link" href="/pipeline/'+e.claim+'" target="_blank">verify &rarr;</a></td>'
+        + '</tr>').join('');
+    }
   } catch(e) {}
 }
 tick(); setInterval(tick, 2000);

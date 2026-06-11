@@ -803,6 +803,81 @@ def api_analytics():
 def panel_analytics():
     return render_template("analytics.html")
 
+
+@app.route("/api/episodes")
+def api_episodes():
+    """Per-referral detail for the 40-demo set: latency + key factors per episode
+    (not just averages), plus the guardrail split — which cases the agent handled
+    autonomously (no human) vs. escalated — so a reviewer can spot-check the
+    autonomous ones. Powers the observability per-referral table + verification list."""
+    import policy
+    demo_claims = sorted(
+        d.name for d in REFERRALS_DIR.iterdir()
+        if d.is_dir() and d.name.startswith("WC-2026-084"))[:40]
+    demo_set = set(demo_claims)
+    with _lock:
+        lat_by_claim = {q.get("claim"): q.get("elapsed") for q in _state["queue"]}
+        status_by_claim = {q.get("claim"): q.get("status") for q in _state["queue"]}
+
+    latest = {}
+    for p in OUTPUT_DIR.glob("fields-*.json"):
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        f = data.get("fields", {}) or {}
+        key = f.get("claim_number")
+        if not key:
+            stem = p.stem.split("-", 1)[-1]
+            toks = stem.rsplit("-", 3)
+            key = "-".join(toks[:-3]) if len(toks) >= 4 else stem
+        if key not in demo_set:
+            continue
+        mt = p.stat().st_mtime
+        if key not in latest or mt > latest[key][0]:
+            latest[key] = (mt, data)
+
+    eps = []
+    for claim in demo_claims:
+        entry = latest.get(claim)
+        if not entry:
+            continue
+        data = entry[1]
+        f = data.get("fields", {}) or {}
+        comp = data.get("completeness", {}) or {}
+        kg = f.get("kg_validation", {}) or {}
+        juris = f.get("jurisdiction") if isinstance(f.get("jurisdiction"), dict) else None
+        tier = f.get("confidence_tier") if isinstance(f.get("confidence_tier"), dict) else None
+        is_complete = bool(comp.get("is_complete"))
+        eps.append({
+            "claim": claim,
+            "patient": f.get("patient_name", ""),
+            "dme_item": f.get("dme_item", ""),
+            "latency_s": lat_by_claim.get(claim),
+            "confidence": f.get("confidence"),
+            "kg_status": kg.get("status", "—"),
+            "rules_fired": kg.get("rules_fired"),
+            "gaps": len(comp.get("gaps", {}) or {}),
+            "escalated": bool(f.get("escalate")),
+            "status": status_by_claim.get(claim) or ("routed" if is_complete else "gaps"),
+            "jurisdiction": (juris or {}).get("state", "—"),
+            "sla_days": (juris or {}).get("sla_days"),
+            "tier": (tier or {}).get("tier", ""),
+        })
+
+    auto = [e for e in eps if not e["escalated"]]
+    escalated = [e for e in eps if e["escalated"]]
+    lats = [e["latency_s"] for e in eps if isinstance(e["latency_s"], (int, float))]
+    avg_lat = round(sum(lats) / len(lats), 1) if lats else 0
+    return jsonify({
+        "count": len(eps),
+        "episodes": eps,
+        "avg_latency_s": avg_lat,
+        "auto_handled": auto, "auto_count": len(auto),
+        "escalated": escalated, "escalated_count": len(escalated),
+    })
+
+
 @app.route("/panel/scale")
 def panel_scale():
     return render_template("scale.html")
