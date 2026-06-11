@@ -44,6 +44,12 @@ def login():
     if request.method == "POST":
         if request.form.get("password") == DEMO_PASSWORD:
             session["authed"] = True
+            # Fresh login = fresh demo: clear any ingested SOP so live processing is
+            # re-gated until the user ingests SOPs again (no SOPs, no run).
+            try:
+                (OUTPUT_DIR / "active_sop_rules.json").unlink()
+            except Exception:
+                pass
             return redirect(request.args.get("next") or url_for("index"))
         error = "Incorrect password — try again."
     return render_template("login.html", error=error)
@@ -323,6 +329,8 @@ def process_referral(folder: Path, link: bool = False) -> dict:
             completeness["required_missing"] = [k for k, v in completeness["gaps"].items() if v == "REQUIRED"]
             completeness["is_complete"] = len(completeness["gaps"]) == 0
             _log(f"{claim} — auth_ref missing but NOT held: SOP §2.1 not active (SOP-driven release → routes)")
+        elif "auth_ref" in completeness["gaps"]:
+            _log(f"{claim} — SOP §2.1 enforced: authorization reference required → episode HELD")
 
         gap_count = len(completeness["gaps"])
 
@@ -1020,6 +1028,15 @@ def api_sop_toggle(clause):
     _persist_active_sop_rules(rules)
     _log(f"SOP §{clause} {'DISABLED' if has else 'enabled'} — {len(rules)} rules now active")
     return jsonify({"clause": clause, "active": (not has), "count": len(rules)})
+
+@app.route("/api/sop-reset", methods=["POST"])
+def api_sop_reset():
+    """Clear the ingested SOP set — re-gates live processing (used to reset the demo)."""
+    try:
+        _SOP_ACTIVE_PATH.unlink()
+    except Exception:
+        pass
+    return jsonify({"status": "reset", "ingested": False})
 
 @app.route("/api/sop-status")
 def api_sop_status():
