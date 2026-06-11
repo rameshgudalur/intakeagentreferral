@@ -879,15 +879,18 @@ _SOP_RULES_FALLBACK = [
 _SOP_ACTIVE_PATH = OUTPUT_DIR / "active_sop_rules.json"
 
 def _load_active_sop_rules():
-    """The SOP rules currently governing live processing — written when an SOP is
-    ingested (/api/ingest-sop). Falls back to the cached set if none ingested yet."""
+    """The SOP rules currently governing live processing — written ONLY when an SOP is
+    ingested (/api/ingest-sop). No silent fallback: if nothing has been ingested this
+    session there are NO active rules, and the run gate blocks processing. (The cached
+    set is used only inside the ingest endpoint as an extraction-failure fallback, which
+    still writes the active file — i.e. only after a deliberate ingest.)"""
     try:
         rules = json.loads(_SOP_ACTIVE_PATH.read_text(encoding="utf-8"))
         if isinstance(rules, list) and rules:
             return rules
     except Exception:
         pass
-    return list(_SOP_RULES_FALLBACK)
+    return []
 
 def _persist_active_sop_rules(rules):
     try:
