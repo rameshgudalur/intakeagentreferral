@@ -201,6 +201,17 @@
   </div>
   <div class="note">Citations shown are live in the agent's knowledge graph (CMS ICD-10-CM FY2026 + LCD/NCD). SOP clause numbers are illustrative placeholders for your library &mdash; the mapping is what's real.</div>
 
+  <div class="seclabel">Prove it &mdash; one rule, genuinely enforced</div>
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-color:#bbf7d0;background:#f0fdf4">
+    <div style="font-size:12px;color:#334155;max-width:60%;line-height:1.5">
+      <b>SOP §2.1 — Authorization required before scheduling</b> isn&rsquo;t just labeled, it&rsquo;s <b>enforced from the ingested rule</b>. Toggle it off and re-run the agent: referrals missing an authorization reference will <b>route instead of being held</b> &mdash; the SOP genuinely changes the decision. (Re-ingesting restores it.)
+    </div>
+    <div style="text-align:right">
+      <button id="authToggle" onclick="toggleAuth()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:800;cursor:pointer">&#x2713; §2.1 Enforcing — click to disable</button>
+      <div id="authToggleNote" style="font-size:10px;color:#64748b;margin-top:6px"></div>
+    </div>
+  </div>
+
   <div class="seclabel">Governance &mdash; SOPs as the source of truth</div>
   <div class="gov">
     <div class="card">
@@ -237,8 +248,35 @@ function ingestSOP(){
     }).join('');
     btn.disabled=false; btn.textContent='⚙ Re-ingest SOP → generate rules';
     st.innerHTML = (d.source==='live' ? '<span class="live-badge">● Live LLM extraction</span>' : '<span class="cache-badge">● Cached extraction</span>') + ' · '+rules.length+' rules generated' + (d.activated ? ' · <b style="color:#15803d">now active in live processing</b>' : '');
+    refreshAuthToggle();
   }).catch(()=>{ btn.disabled=false; btn.textContent='⚙ Ingest SOP → generate rules'; st.textContent='Error — try again'; });
 }
+
+function setAuthBtn(active){
+  const b=document.getElementById('authToggle'); if(!b) return;
+  if(active){ b.style.background='#16a34a'; b.innerHTML='&#x2713; §2.1 Enforcing — click to disable'; }
+  else { b.style.background='#b91c1c'; b.innerHTML='&#x2715; §2.1 DISABLED — click to re-enable'; }
+}
+function refreshAuthToggle(){
+  fetch('/api/sop-status').then(r=>r.json()).then(s=>{
+    const n=document.getElementById('authToggleNote');
+    if(!s.ingested){ if(n) n.textContent='Ingest the SOP first to enable enforcement.'; return; }
+    setAuthBtn((s.clauses||[]).indexOf('2.1') !== -1);
+  }).catch(()=>{});
+}
+function toggleAuth(){
+  const b=document.getElementById('authToggle'), n=document.getElementById('authToggleNote');
+  b.disabled=true;
+  fetch('/api/sop-toggle/2.1',{method:'POST'}).then(r=>r.json()).then(d=>{
+    b.disabled=false;
+    if(d.error){ n.textContent='Ingest the SOP first (top of page).'; return; }
+    setAuthBtn(d.active);
+    n.innerHTML = d.active
+      ? 'Auth gate <b>ON</b> — missing-auth referrals are held. ('+d.count+' active rules) Re-run to see.'
+      : 'Auth gate <b>OFF</b> — missing-auth referrals will <b>route</b>. ('+d.count+' active rules) Re-run to see the change.';
+  }).catch(()=>{ b.disabled=false; });
+}
+refreshAuthToggle();
 </script>
 </body>
 </html>

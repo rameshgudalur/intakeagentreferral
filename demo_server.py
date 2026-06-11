@@ -304,6 +304,26 @@ def process_referral(folder: Path, link: bool = False) -> dict:
         # ── STEP 4: Completeness / gap check ──────────────────────────────────
         _update_queue_item(claim, substep="Checking gaps...")
         completeness = check_completeness(fields)
+
+        # ── SOP-DRIVEN ENFORCEMENT (genuine, not a label): the authorization hard-block
+        # is sourced from the ACTIVE ingested SOP rule (§2.1 — "no referral scheduled
+        # without an active authorization reference"). If that rule is in the ingested
+        # SOP, a missing auth_ref HOLDS the episode; if the SOP does NOT include it, the
+        # agent does not hold for auth and the episode routes. So this decision truly
+        # changes with the SOP — toggle §2.1 off and re-run to see auth holds disappear. ──
+        _active_rules = _load_active_sop_rules()
+        _auth_rule_active = any(
+            (str(r.get("field", "")).lower() == "auth_ref") or
+            (str(r.get("action", "")).lower() == "block" and "auth" in str(r.get("sop", "")).lower())
+            for r in _active_rules)
+        fields["sop_auth_enforced"] = _auth_rule_active
+        if "auth_ref" in completeness["gaps"] and not _auth_rule_active:
+            completeness["gaps"].pop("auth_ref", None)
+            completeness["hard_blocks"] = [k for k, v in completeness["gaps"].items() if v == "HARD BLOCK"]
+            completeness["required_missing"] = [k for k, v in completeness["gaps"].items() if v == "REQUIRED"]
+            completeness["is_complete"] = len(completeness["gaps"]) == 0
+            _log(f"{claim} — auth_ref missing but NOT held: SOP §2.1 not active (SOP-driven release → routes)")
+
         gap_count = len(completeness["gaps"])
 
         if gap_count > 0:
@@ -958,6 +978,23 @@ def _sop_ingested():
     """True once an SOP has been ingested this session (active_sop_rules.json written)."""
     return _SOP_ACTIVE_PATH.exists()
 
+@app.route("/api/sop-toggle/<clause>", methods=["POST"])
+def api_sop_toggle(clause):
+    """Enable/disable a single SOP clause in the active rule set — to demonstrate that a
+    rule genuinely drives processing (toggle §2.1 off → auth no longer enforced on a run).
+    Re-ingesting the SOP restores the full set."""
+    rules = _load_active_sop_rules()
+    if not rules:
+        return jsonify({"error": "no_active_sop", "message": "Ingest the SOP first."}), 409
+    has = any(str(r.get("clause")) == clause for r in rules)
+    if has:
+        rules = [r for r in rules if str(r.get("clause")) != clause]
+    else:
+        rules = rules + [r for r in _SOP_RULES_FALLBACK if str(r.get("clause")) == clause]
+    _persist_active_sop_rules(rules)
+    _log(f"SOP §{clause} {'DISABLED' if has else 'enabled'} — {len(rules)} rules now active")
+    return jsonify({"clause": clause, "active": (not has), "count": len(rules)})
+
 @app.route("/api/sop-status")
 def api_sop_status():
     ingested = _sop_ingested()
@@ -969,7 +1006,8 @@ def api_sop_status():
         except Exception:
             pass
     return jsonify({"ingested": ingested, "count": len(rules), "ingested_at": ts,
-                    "source": "coastal_intake_sop.docx"})
+                    "source": "coastal_intake_sop.docx",
+                    "clauses": [str(r.get("clause", "")) for r in rules]})
 
 
 @app.route("/api/episodes")
