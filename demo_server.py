@@ -988,6 +988,49 @@ def api_outbound_call(claim):
     return jsonify(result)
 
 
+@app.route("/api/call-transcript/<call_id>")
+def api_call_transcript(call_id):
+    """Fetch the REAL Vapi call transcript by call id so the voice-outreach screen
+    shows the actual conversation (not a scripted one). Returns ready=True only once
+    the call has ended and messages are available; the UI polls until then."""
+    import httpx
+    key = os.environ.get("VAPI_API_KEY") or os.environ.get("VAPI_API_Key", "")
+    if not key:
+        return jsonify({"ready": False, "error": "no vapi key"})
+    ua = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+          "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+    try:
+        r = httpx.get(f"https://api.vapi.ai/call/{call_id}",
+                      headers={"Authorization": f"Bearer {key}", "User-Agent": ua},
+                      timeout=15)
+    except Exception as e:
+        return jsonify({"ready": False, "error": str(e)[:120]})
+    if r.status_code != 200:
+        return jsonify({"ready": False, "error": f"vapi {r.status_code}"})
+    call = r.json()
+    status = call.get("status", "")
+    artifact = call.get("artifact", {}) or {}
+    raw = artifact.get("messages") or call.get("messages") or []
+    msgs = []
+    for m in raw:
+        role = (m.get("role") or "").lower()
+        if role == "system":
+            continue
+        text = (m.get("message") or m.get("content") or "").strip()
+        if not text:
+            continue
+        who = "agent" if role in ("bot", "assistant") else ("caller" if role in ("user", "human") else role)
+        msgs.append({"who": who, "text": text})
+    ended = status == "ended"
+    return jsonify({
+        "ready": ended and len(msgs) > 0,
+        "ended": ended,
+        "status": status,
+        "messages": msgs,
+        "summary": (call.get("analysis", {}) or {}).get("summary", ""),
+    })
+
+
 @app.route("/api/episode/<claim>")
 def api_episode(claim):
     ep_file = OUTPUT_DIR / f"episode-{claim}-{datetime.date.today().isoformat()}.md"

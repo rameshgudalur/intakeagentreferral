@@ -1504,6 +1504,33 @@ function goTab(n) {
   if (panel) panel.classList.add('active');
 }
 
+// #7: pull the REAL Vapi transcript after the call ends and swap it in for the script
+let _scriptedTranscriptHTML = null;
+function pollRealTranscript(callId, attempts) {
+  if (attempts > 40) { restoreScriptedTranscript(); return; }   // ~3.5 min then fall back
+  fetch('/api/call-transcript/' + callId)
+    .then(r => r.json())
+    .then(d => {
+      if (d.ready && d.messages && d.messages.length) renderRealTranscript(d.messages);
+      else setTimeout(() => pollRealTranscript(callId, attempts + 1), 5000);
+    })
+    .catch(() => setTimeout(() => pollRealTranscript(callId, attempts + 1), 5000));
+}
+function renderRealTranscript(messages) {
+  const post = document.getElementById('post-call-block');
+  if (post) post.style.display = 'block';
+  const ct = post ? post.querySelector('.call-transcript') : null;
+  if (!ct) return;
+  ct.innerHTML = '<div class="ct-ttl">&#x1F3A4; AI Call Transcript — live from this call (' + messages.length + ' turns)</div>'
+    + messages.map(m => '<div class="ct-line"><div class="' + (m.who === 'agent' ? 'ct-agent' : 'ct-cm') + '">'
+        + (m.who === 'agent' ? 'Agent' : 'CM') + '</div><div class="ct-text">' + (m.text || '').replace(/</g, '&lt;') + '</div></div>').join('');
+}
+function restoreScriptedTranscript() {
+  const post = document.getElementById('post-call-block');
+  const ct = post ? post.querySelector('.call-transcript') : null;
+  if (ct && _scriptedTranscriptHTML !== null) ct.innerHTML = _scriptedTranscriptHTML;
+}
+
 function placeOutboundCall() {
   const btn = document.getElementById('call-btn');
   const status = document.getElementById('call-status');
@@ -1517,12 +1544,18 @@ function placeOutboundCall() {
       if (data.success) {
         status.style.color = '#16a34a';
         status.innerHTML = '&#x2705; Call placed · ID: ' + (data.call_id || 'confirmed') + ' · Agent dialing now';
-        // Reveal the transcript only once the call has actually gone out
         const post = document.getElementById('post-call-block');
+        const ct = post ? post.querySelector('.call-transcript') : null;
+        if (ct && _scriptedTranscriptHTML === null) _scriptedTranscriptHTML = ct.innerHTML;
+        // Reveal the transcript area once the call has gone out; show a live-fetch
+        // placeholder, then swap in the REAL Vapi transcript when the call ends.
         if (post) setTimeout(() => {
           post.style.display = 'block';
-          status.innerHTML = '&#x2705; Call complete · ID: ' + (data.call_id || 'confirmed') + ' · transcript below';
+          if (ct) ct.innerHTML = '<div class="ct-ttl">&#x1F3A4; AI Call Transcript</div>'
+            + '<div style="color:#94a3b8;font-size:12px;padding:10px 4px">&#x23F3; Fetching the live transcript from this call — appears the moment the call ends&hellip;</div>';
+          status.innerHTML = '&#x2705; Call placed · live transcript will appear when the call ends';
         }, 3000);
+        if (data.call_id) setTimeout(() => pollRealTranscript(data.call_id, 0), 6000);
       } else {
         status.style.color = '#dc2626';
         status.innerHTML = '&#x26A0; Call failed: ' + (data.reason || 'unknown error');
