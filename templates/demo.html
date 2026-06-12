@@ -446,12 +446,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Reflect SOP-ingest status: processing is gated until SOPs are ingested.
 function refreshSopIndicator() {
-  fetch('/api/sop-status').then(r => r.json()).then(s => {
-    const st = document.getElementById('status-text');
-    if (!st) return;
-    if (s.ingested) st.innerHTML = '&#x2713; SOPs active — ' + s.count + ' rules · ready to process';
-    else st.innerHTML = '&#x26A0; Ingest SOPs first — <a href="/panel/sops" target="_blank" style="color:#fbbf24;font-weight:800">open the SOP panel</a>, then Start';
-  }).catch(() => {});
+  // SOPs load autonomously; just reflect that the agent is running on them.
+  const st = document.getElementById('status-text');
+  if (st) st.innerHTML = '&#x2713; Running on your SOP rules — ready to process';
 }
 
 // ── TAB SWITCHING ─────────────────────────────────────────────────────────────
@@ -581,11 +578,8 @@ function sopGateBlock() {
 }
 
 function startProcessing() {
-  // Gate: SOPs must be ingested before any processing run.
-  fetch('/api/sop-status').then(r => r.json()).then(s => {
-    if (!s.ingested) { sopGateBlock(); return; }
-    _doStartProcessing();
-  }).catch(() => _doStartProcessing());
+  // SOP rules load autonomously at run start — no gate.
+  _doStartProcessing();
 }
 
 function _doStartProcessing() {

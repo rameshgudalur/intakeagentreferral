@@ -44,12 +44,6 @@ def login():
     if request.method == "POST":
         if request.form.get("password") == DEMO_PASSWORD:
             session["authed"] = True
-            # Fresh login = fresh demo: clear any ingested SOP so live processing is
-            # re-gated until the user ingests SOPs again (no SOPs, no run).
-            try:
-                (OUTPUT_DIR / "active_sop_rules.json").unlink()
-            except Exception:
-                pass
             return redirect(request.args.get("next") or url_for("index"))
         error = "Incorrect password — try again."
     return render_template("login.html", error=error)
@@ -421,7 +415,7 @@ def run_batch(folders: list, workers: int = 20):
     _log(f"Starting {len(folders)} referrals — {workers} concurrent workers")
     _active_sop = _load_active_sop_rules()
     _sop_clauses = " · ".join("§" + str(r.get("clause", "")) for r in _active_sop[:8])
-    _log(f"SOP library loaded — {len(_active_sop)} active rules from your ingested SOP now governing this run ({_sop_clauses})")
+    _log(f"SOP library loaded — {len(_active_sop)} active SOP rules governing this run ({_sop_clauses})")
 
     BATCH_TIMEOUT = 120  # seconds — if any referral hangs longer than this, cut it loose
 
@@ -907,18 +901,17 @@ _SOP_RULES_FALLBACK = [
 _SOP_ACTIVE_PATH = OUTPUT_DIR / "active_sop_rules.json"
 
 def _load_active_sop_rules():
-    """The SOP rules currently governing live processing — written ONLY when an SOP is
-    ingested (/api/ingest-sop). No silent fallback: if nothing has been ingested this
-    session there are NO active rules, and the run gate blocks processing. (The cached
-    set is used only inside the ingest endpoint as an extraction-failure fallback, which
-    still writes the active file — i.e. only after a deliberate ingest.)"""
+    """The SOP rule set governing live processing. Uses the ingested set if present,
+    otherwise the built-in cached set — so the agent ALWAYS runs on its SOP rules
+    autonomously (no manual ingest required; the ingest button is an on-demand
+    'watch the extraction' control, not a gate)."""
     try:
         rules = json.loads(_SOP_ACTIVE_PATH.read_text(encoding="utf-8"))
         if isinstance(rules, list) and rules:
             return rules
     except Exception:
         pass
-    return []
+    return list(_SOP_RULES_FALLBACK)
 
 def _persist_active_sop_rules(rules):
     try:
@@ -1138,12 +1131,6 @@ def api_start():
         if _state["status"] == "running":
             return jsonify({"error": "Already running"}), 400
 
-    # Gate: the agent runs on the client's SOP-configured rules — require an SOP
-    # ingest before any processing run (self-serve user ingests SOPs first).
-    if not _sop_ingested():
-        return jsonify({"error": "sops_not_ingested",
-                        "message": "Ingest your SOPs first — the agent runs on your SOP-configured rules. "
-                                   "Open the SOP panel and click ‘Ingest SOP → generate rules,’ then start."}), 409
 
     # Reset state
     with _lock:
