@@ -164,8 +164,11 @@ def process_referral(folder: Path, link: bool = False) -> dict:
         # ── STEP 2: Extract fields via LLM ────────────────────────────────────
         _update_queue_item(claim, substep="Extracting fields...")
         _log(f"{claim} — sending to LLM for extraction")
+        import sop_rules
         with _claude_semaphore:
-            fields = extract_fields(docs, claim)
+            # The SOP's coding-authority order (which evidence wins a code conflict) is
+            # injected into the extraction prompt, so the LLM resolves conflicts per the SOP.
+            fields = extract_fields(docs, claim, sop_rules.coding_authority_order())
         patient = fields.get("patient_name", "Unknown")
         equipment = fields.get("dme_item", "")
 
@@ -216,43 +219,26 @@ def process_referral(folder: Path, link: bool = False) -> dict:
                 return {"claim": claim, "status": "linked", "linked_to": _ex_claim, "resolved": _closed}
 
         # ── Parking Lot 4 + 9: jurisdiction SLA + confidence tier ─────────────
+        # Thresholds come from the ACTIVE SOP (jurisdiction_sla / confidence_gate clauses),
+        # not hardcoded constants — change the SOP and the cut-offs change with it.
         import policy
-        _juris = policy.assess_jurisdiction(fields)
-        _ctier = policy.confidence_tier(fields.get("confidence"))
+        _sla_map = sop_rules.jurisdiction_slas()
+        _conf_thr = sop_rules.confidence_thresholds()
+        _juris = policy.assess_jurisdiction(fields, _sla_map)
+        _ctier = policy.confidence_tier(fields.get("confidence"), _conf_thr["auto_min"], _conf_thr["spotcheck_min"])
         fields["jurisdiction"] = _juris
         fields["confidence_tier"] = _ctier
+        _jrule = sop_rules.rule_for("jurisdiction_sla")
+        _crule = sop_rules.rule_for("confidence_gate")
+        _jcite = f"SOP §{_jrule['clause']}" if _jrule and _jrule.get("clause") else "jurisdiction policy"
+        _ccite = f"SOP §{_crule['clause']}" if _crule and _crule.get("clause") else "confidence policy"
         _update_queue_item(claim, jurisdiction=_juris["state"], sla_days=_juris["sla_days"],
                            sla_priority=_juris["sla_priority"], conf_tier=_ctier["tier"])
-        _log(f"{claim} — jurisdiction {_juris['state']} (SLA {_juris['sla_days']}d) per SOP §5.2 · confidence tier {_ctier['tier']} [{_ctier['autonomy']}] per SOP §6.1")
+        _log(f"{claim} — jurisdiction {_juris['state']} (SLA {_juris['sla_days']}d) per {_jcite} · confidence tier {_ctier['tier']} [{_ctier['autonomy']}] per {_ccite}")
 
-        # ── Featured hero (Holloway): guarantee the multi-conflict ICD log renders
-        # from THIS episode's own data. Without this, an empty icd_conflicts array
-        # makes the pipeline page fall back to generic reference cards bearing
-        # other patients' names — confusing on the centerpiece walkthrough. ──
-        if claim == FEATURED_CLAIM and not fields.get("icd_conflicts"):
-            _primary = fields.get("icd_code") or "M51.26"
-            _ep = "This Episode · " + str(fields.get("claim_number", claim))
-            fields["icd_conflicts"] = [
-                {"conflict_id": 1, "label": _ep, "escalate": False, "confidence": 94,
-                 "form_code": "M54.5", "notes_code": _primary, "rx_code": _primary,
-                 "resolved_code": _primary,
-                 "reasoning": "Referral form carried an unspecified code (M54.5). Clinical "
-                              "notes and prescription both specify " + _primary + ". Specific "
-                              "code adopted — notes and Rx are the clinical authority."},
-                {"conflict_id": 2, "label": _ep + " · secondary dx", "escalate": False,
-                 "confidence": 88, "form_code": "M79.3", "notes_code": "M79.31",
-                 "rx_code": "M79.31", "resolved_code": "M79.31",
-                 "reasoning": "Form code M79.3 (unspecified). Notes and prescription both "
-                              "specify M79.31. Evidence 2:1 in agreement — resolved automatically."},
-                {"conflict_id": 3, "label": _ep + " · level dispute", "escalate": True,
-                 "confidence": 71, "form_code": "M47.812", "notes_code": "M47.816",
-                 "rx_code": "M47.812", "resolved_code": "",
-                 "reasoning": "Form and prescription agree on M47.812 (lumbar L1–L4). "
-                              "Clinical notes say M47.816 (lumbar L4–L5). Evidence split "
-                              "2:1 — insufficient to resolve automatically. Confidence 71% "
-                              "below the 80% threshold. The agent does not guess — routed "
-                              "to specialist review."},
-            ]
+        # NOTE: ICD conflicts are taken ONLY from the LLM's real extraction above
+        # (fields["icd_conflicts"]). No seeded/fabricated conflicts — the Intelligence
+        # panel renders whatever the agent actually found in this episode's documents.
 
         # ── STEP 3: Knowledge Graph validation ────────────────────────────────
         _update_queue_item(claim, substep="KG validation...")
@@ -888,14 +874,14 @@ _SOP_PATH = BASE_DIR / "sops" / "coastal_intake_sop.md"
 
 # Cached extraction — used as a fallback so the demo never fails if the live call errors.
 _SOP_RULES_FALLBACK = [
-    {"clause": "2.1", "sop": "No referral scheduled without an active authorization reference.", "agent": "Treats auth_ref as a hard-block gap; requests it from the adjuster and holds the episode until received.", "field": "auth_ref", "action": "block", "citation": "Completeness / gap policy"},
-    {"clause": "3.4", "sop": "Clinical notes (with the prescription) are authoritative on an ICD conflict.", "agent": "Adopts the clinical/Rx code over the referral-form code and documents the override.", "field": "icd_code", "action": "resolve", "citation": "ICD-10-CM §I.B.13 — Laterality"},
-    {"clause": "3.7", "sop": "Post-injury surgery: code the acute injury (S-codes), not degenerative M-codes.", "agent": "Rejects the M-code where an S-code applies (e.g. S83.209A) and selects the trauma code.", "field": "icd_code", "action": "reject", "citation": "ICD-10-CM §I.C.19.a"},
-    {"clause": "4.2", "sop": "A mobility device requires a qualifying mobility-limiting diagnosis on file.", "agent": "Validates the diagnosis against the covered-condition list before routing.", "field": "dme_item", "action": "confirm", "citation": "CMS LCD L33803 — Walkers"},
-    {"clause": "4.5", "sop": "Confirm weight before dispatch; over 300 lbs requires a bariatric unit.", "agent": "Flags missing/over-threshold weight (E0143 → E0149) and collects the spec on outreach.", "field": "dme_item", "action": "flag", "citation": "CMS LCD L33803 — Weight capacity"},
-    {"clause": "5.2", "sop": "Texas referrals actioned within 2 business days; escalate SLA-breach risk.", "agent": "Detects the state, starts the SLA clock (TX = 2 days), prioritizes, and escalates breach risk.", "field": "jurisdiction", "action": "sla", "citation": "State WC fee-schedule"},
-    {"clause": "6.1", "sop": "Auto-route ≥90%; spot-check 80–90%; escalate below 80%.", "agent": "Scores its own confidence per episode and routes to the matching autonomy tier.", "field": "confidence", "action": "tier", "citation": "Confidence-tier policy"},
-    {"clause": "8.0", "sop": "Clinical/coding judgment is never fully automated; ambiguous cases go to a specialist.", "agent": "On split evidence or a laterality conflict, stops and routes to the human-review gate.", "field": "escalate", "action": "escalate", "citation": "ICD-10-CM §I.B.13"},
+    {"clause": "2.1", "type": "required_field", "field": "auth_ref", "severity": "hard_block", "sop": "No referral scheduled without an active authorization reference.", "agent": "Treats auth_ref as a hard-block gap; requests it from the adjuster and holds the episode until received.", "action": "block", "citation": "Completeness / gap policy"},
+    {"clause": "3.4", "type": "coding_authority", "priority_order": ["clinical_notes", "prescription", "referral_form"], "field": "icd_code", "sop": "Clinical notes (with the prescription) are authoritative on an ICD conflict.", "agent": "Adopts the clinical/Rx code over the referral-form code and documents the override.", "action": "resolve", "citation": "ICD-10-CM §I.B.13 — Laterality"},
+    {"clause": "3.7", "type": "coding_rule", "field": "icd_code", "sop": "Post-injury surgery: code the acute injury (S-codes), not degenerative M-codes.", "agent": "Rejects the M-code where an S-code applies (e.g. S83.209A) and selects the trauma code.", "action": "reject", "citation": "ICD-10-CM §I.C.19.a"},
+    {"clause": "4.2", "type": "coverage_check", "applies_to": "dme", "field": "dme_item", "sop": "A mobility device requires a qualifying mobility-limiting diagnosis on file.", "agent": "Validates the diagnosis against the covered-condition list before routing.", "action": "confirm", "citation": "CMS LCD L33803 — Walkers"},
+    {"clause": "4.5", "type": "coverage_check", "applies_to": "dme", "field": "dme_item", "sop": "Confirm weight before dispatch; over 300 lbs requires a bariatric unit.", "agent": "Flags missing/over-threshold weight (E0143 → E0149) and collects the spec on outreach.", "action": "flag", "citation": "CMS LCD L33803 — Weight capacity"},
+    {"clause": "5.2", "type": "jurisdiction_sla", "slas": {"TX": 2, "CA": 5, "FL": 3, "NY": 4, "NJ": 3, "PA": 5}, "field": "jurisdiction", "sop": "Texas referrals actioned within 2 business days; escalate SLA-breach risk.", "agent": "Detects the state, starts the SLA clock (TX = 2 days), prioritizes, and escalates breach risk.", "action": "sla", "citation": "State WC fee-schedule"},
+    {"clause": "6.1", "type": "confidence_gate", "auto_min": 90, "spotcheck_min": 80, "field": "confidence", "sop": "Auto-route ≥90%; spot-check 80–90%; escalate below 80%.", "agent": "Scores its own confidence per episode and routes to the matching autonomy tier.", "action": "tier", "citation": "Confidence-tier policy"},
+    {"clause": "8.0", "type": "escalation", "on": ["split_evidence", "laterality_conflict"], "field": "escalate", "sop": "Clinical/coding judgment is never fully automated; ambiguous cases go to a specialist.", "agent": "On split evidence or a laterality conflict, stops and routes to the human-review gate.", "action": "escalate", "citation": "ICD-10-CM §I.B.13"},
 ]
 
 _SOP_ACTIVE_PATH = OUTPUT_DIR / "active_sop_rules.json"
@@ -940,15 +926,26 @@ def api_ingest_sop():
         return jsonify({"source": "fallback", "rules": _SOP_RULES_FALLBACK, "activated": True})
     prompt = (
         "You are configuring a workers'-compensation DME intake AI agent from a client's written SOP. "
-        "Extract each rule-like clause into a structured rule the agent can enforce. "
-        "Return ONLY a JSON array (no prose, no markdown code fences). Each element is an object with keys: "
-        "clause (the SOP section number, e.g. '2.1'), "
-        "sop (a one-line paraphrase of the clause), "
-        "agent (what the agent does to enforce it, one sentence), "
-        "field (the primary data field it governs, or 'n/a'), "
-        "action (exactly one of: block, resolve, reject, confirm, flag, sla, tier, escalate), "
-        "citation (the governing CMS / ICD-10 / LCD authority if applicable, else 'SOP policy'). "
-        "SOP DOCUMENT:\n\n" + sop_text
+        "Extract each rule-like clause into a TYPED, ENFORCEABLE rule spec the agent's engine reads at "
+        "runtime to drive its decisions. Return ONLY a JSON array (no prose, no markdown code fences).\n\n"
+        "Every element MUST have: clause (SOP section number, e.g. '2.1'), type (see below), "
+        "sop (one-line paraphrase), agent (one sentence on what the agent does), citation (governing "
+        "CMS / ICD-10 / LCD authority if applicable, else 'SOP policy'), and action (one of: block, "
+        "resolve, reject, confirm, flag, sla, tier, escalate).\n\n"
+        "type MUST be exactly one of these, with its type-specific keys:\n"
+        "- 'required_field': add field (the data field, e.g. 'auth_ref') and severity ('hard_block' if a "
+        "referral cannot proceed without it, else 'required').\n"
+        "- 'coding_authority': add priority_order — an ordered list of evidence sources the agent trusts "
+        "to resolve a code conflict, most authoritative first, using exactly these tokens: "
+        "'clinical_notes', 'prescription', 'referral_form'.\n"
+        "- 'coding_rule': add field='icd_code' (a specific coding instruction, e.g. acute vs degenerative).\n"
+        "- 'coverage_check': add applies_to (e.g. 'dme') and field.\n"
+        "- 'jurisdiction_sla': add slas — an object mapping 2-letter state codes to business-day SLAs "
+        "(e.g. {\"TX\":2}); include only states the SOP specifies.\n"
+        "- 'confidence_gate': add auto_min and spotcheck_min as integer percentages (auto-route at or "
+        "above auto_min; spot-check between spotcheck_min and auto_min; escalate below spotcheck_min).\n"
+        "- 'escalation': add on — a list of trigger tokens (e.g. 'split_evidence', 'laterality_conflict').\n\n"
+        "Use the numbers and field names actually stated in the SOP. SOP DOCUMENT:\n\n" + sop_text
     )
     try:
         from intake_agent import _call_claude

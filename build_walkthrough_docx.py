@@ -58,6 +58,10 @@ ap.add_run(PASSWORD)
 body("Open the link, enter the password, and click “Enter.” You’ll land on the Hub. "
      "This is a live working agent on real referral packages — not slides. Take it at your own pace; "
      "nothing you click can break it.")
+body("The agent runs on your SOPs automatically — they load on every run, so you can go straight to the "
+     "“Live Intake and Referral Agent” card and Start. Want to see where the rules come from? Open "
+     "“Your SOPs → The Agent’s Rules” and click “Ingest SOP → generate rules” to watch the agent read the "
+     "SOP and produce the rules live — optional; the agent already uses them.")
 
 # ── click-path at a glance ──
 heading("Where to click — at a glance", 13)
@@ -84,7 +88,8 @@ why("This is one intake agent plus the layers around it — the rule engine it r
 
 # ── 2 ──
 heading("2.  Watch the agent work")
-nav("The large “Live Intake and Referral Agent” card → then the green “Start Live Processing” button.")
+nav("The large “Live Intake and Referral Agent” card → then the green “Start Live Processing” button. "
+    "(Your SOPs load automatically — it runs right away.)")
 see("A queue of real referrals processing in real time — patient, equipment, priority (with the reason), gaps, and outcome resolving row by row. Every row’s 3 source documents are openable (📄 📋 💊).")
 why("It reads every page, extracts the fields, checks them against cited rules, scores its own confidence, and decides route-vs-flag — with no manual data entry. Outreach is drafted, never blind-sent.")
 body("As rows process, the live activity log at the bottom of the screen cites the SOP clause behind "
@@ -107,7 +112,7 @@ body("Where SOPs show up here: on Step 03 (Intelligence Layer) you’ll see “R
 
 # ── 4 ──
 heading("4.  Your SOPs → the Agent’s Rules  (the differentiator)")
-nav("Back to the Hub → “Your SOPs → The Agent’s Rules” → click “Ingest SOP → generate rules.”")
+nav("Back to the Hub → “Your SOPs → The Agent’s Rules” → click “Ingest SOP → generate rules” to watch the extraction (optional — the agent already runs on your SOPs).")
 see("A sample intake SOP on the left; on click, the agent reads it and generates the structured rules live — each mapped to its SOP clause and the CMS authority behind it. Plus governance (versioned, owner, change-control).")
 why("The agent doesn’t run on generic logic — it runs on YOUR procedures. Change an SOP, the rule regenerates under review. And in any referral’s audit trail, each decision traces back: decision → rule → SOP clause → regulation.")
 body("Seeing it in the run: the live log cites the SOP behind each decision — e.g. “held per SOP §2.1”, "
@@ -117,7 +122,10 @@ body("Seeing it in the run: the live log cites the SOP behind each decision — 
 body("Where it is on the maturity curve (worth being precise): the agent reads and runs your SOP rules "
     "today and traces every decision to its clause and regulation. Having your SOP library also set the "
     "exact thresholds directly (confidence cut-offs, state SLAs) is the deployment-phase step — "
-    "configured-from-your-SOPs today, deepening to generated-from-your-SOPs in deployment.", space_after=10)
+    "configured-from-your-SOPs today, deepening to generated-from-your-SOPs in deployment.")
+body("Genuinely enforced, not just labeled: SOP §2.1 (authorization required) is sourced from the ingested "
+    "rule — a referral missing its authorization reference is held and the agent chases the authorization, "
+    "rather than scheduling unauthorized work. That hold is the SOP doing its job.", space_after=10)
 
 # ── 5 ──
 heading("5.  Live Observability — proof the guardrails work")
@@ -144,6 +152,11 @@ body("A working agent on real referral packages: it reads, validates against cit
      "confidence, escalates instead of guessing, runs off your SOPs, reaches out by email and phone, and "
      "logs every decision for audit — with the guardrails visible and inspectable. The natural next step is a "
      "48-hour proof on a sample of your own intake packages — no integration, nothing sensitive shared.")
+
+heading("How the agent uses your SOPs", 13)
+body("Applied, not validated after the fact: the agent loads your SOP rule set and applies each rule to "
+     "every case in real time, tracing each decision to its clause and the regulation behind it. Today the "
+     "rule set is configured from your SOPs (numeric thresholds live in config, mapped to the clauses).", space_after=10)
 
 heading("A few tips while you explore", 13)
 for tip in [

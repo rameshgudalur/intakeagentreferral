@@ -90,8 +90,27 @@ def load_pdfs(folder: str) -> list[dict]:
 
 # ── MODULE 2: EXTRACTION + INTELLIGENCE ──────────────────────────────────────
 
-def extract_fields(docs: list[dict], claim_number: str) -> dict:
-    """Send all PDFs to Claude in one call. Extract fields and detect ICD conflicts."""
+_AUTHORITY_LABELS = {
+    "clinical_notes": "the clinical notes",
+    "prescription": "the prescription",
+    "referral_form": "the referral form",
+}
+
+
+def _authority_sentence(order) -> str:
+    """Build the coding-authority instruction from the SOP's evidence-precedence order."""
+    if not order:
+        order = ["clinical_notes", "prescription", "referral_form"]
+    labels = [_AUTHORITY_LABELS.get(o, o) for o in order]
+    chain = " over ".join(labels)
+    return ("Cross-reference ICD codes across ALL documents. If there is a conflict, resolve it using "
+            f"this evidence-authority order (per the client's SOP coding-authority rule): trust {chain}. "
+            "Explain in 'reasoning' which source you trusted and why. Set confidence accordingly.")
+
+
+def extract_fields(docs: list[dict], claim_number: str, coding_authority_order=None) -> dict:
+    """Send all PDFs to Claude in one call. Extract fields and detect ICD conflicts.
+    coding_authority_order (from the active SOP) sets which evidence source wins a code conflict."""
 
     content = []
     for doc in docs:
@@ -152,9 +171,9 @@ Return a single JSON object with these keys (use empty string "" if not found):
 - priority_reason (one sentence explaining the priority assignment)
 - notes (any other important observations)
 
-Cross-reference ICD codes across ALL documents. If there is a conflict, resolve it using clinical notes and prescription as the authority over the referral form. Set confidence accordingly.
+__AUTHORITY_RULE__
 
-Return ONLY valid JSON. No explanation outside the JSON."""
+Return ONLY valid JSON. No explanation outside the JSON.""".replace("__AUTHORITY_RULE__", _authority_sentence(coding_authority_order))
     })
 
     print("  Sending to Claude for extraction...")

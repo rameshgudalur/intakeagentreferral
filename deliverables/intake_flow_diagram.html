@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intake Agent — End-to-End Flow</title>
+<style>
+  :root{
+    --navy:#1e3a5f; --blue:#2563eb; --blue-l:#eff6ff; --blue-m:#bfdbfe;
+    --green:#15803d; --green-l:#f0fdf4; --green-m:#86efac;
+    --amber:#b45309; --amber-l:#fffbeb; --amber-m:#fcd34d;
+    --purple:#7c3aed; --purple-l:#f5f3ff; --purple-m:#ddd6fe;
+    --gray:#64748b; --line:#cbd5e1; --ink:#0f172a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',-apple-system,system-ui,sans-serif;background:#f8fafc;color:var(--ink);padding:32px 28px 48px}
+  .wrap{max-width:1480px;margin:0 auto}
+  header{text-align:center;margin-bottom:6px}
+  h1{font-size:26px;color:var(--navy);letter-spacing:-.02em}
+  .sub{font-size:13px;color:var(--gray);margin-top:6px;margin-bottom:26px}
+  .sub b{color:var(--blue)}
+
+  /* main 3-band flow */
+  .flow{display:grid;grid-template-columns:200px 56px 1fr 56px 210px;align-items:stretch;gap:0}
+  .band-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);text-align:center;margin-bottom:12px}
+
+  .col{display:flex;flex-direction:column;justify-content:center;gap:12px}
+
+  /* input / output cards */
+  .node{border-radius:12px;padding:14px 14px;text-align:center;border:1.5px solid var(--blue-m);background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .node .ic{font-size:22px;line-height:1}
+  .node .t{font-size:13px;font-weight:800;color:var(--navy);margin-top:6px}
+  .node .s{font-size:10.5px;color:var(--gray);margin-top:3px;line-height:1.35}
+  .in .ic{filter:saturate(1.1)}
+  .out{border-color:var(--green-m);background:var(--green-l)}
+  .out .t{color:var(--green)}
+
+  /* big connectors between bands */
+  .conn{display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:30px;font-weight:700}
+
+  /* agent core */
+  .agent{border:2px solid var(--blue);border-radius:18px;background:linear-gradient(180deg,#ffffff, #f8faff);padding:18px 16px 16px;position:relative}
+  .agent-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 14px;border-radius:20px;white-space:nowrap}
+  .stages{display:grid;grid-template-columns:repeat(6,1fr);gap:0;align-items:stretch;margin-top:8px}
+  .stage{position:relative;padding:0 9px;display:flex;flex-direction:column}
+  .stage:not(:last-child)::after{content:"\2192";position:absolute;right:-7px;top:30px;color:var(--line);font-size:18px;font-weight:700;z-index:2}
+  .stage .num{width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+  .stage .st{font-size:12px;font-weight:800;color:var(--navy);text-align:center;line-height:1.25;min-height:30px}
+  .stage .sd{font-size:10px;color:var(--gray);text-align:center;margin-top:6px;line-height:1.4}
+
+  /* foundation bars */
+  .foundation{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .fbar{border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700}
+  .fbar .fi{font-size:15px}
+  .kg{background:var(--purple-l);border:1px solid var(--purple-m);color:var(--purple)}
+  .audit{background:#f1f5f9;border:1px solid var(--line);color:var(--navy)}
+
+  /* human in the loop callout */
+  .hitl{margin-top:12px;background:var(--amber-l);border:1px solid var(--amber-m);border-radius:10px;padding:10px 14px;font-size:11.5px;color:var(--amber);display:flex;align-items:center;gap:8px;justify-content:center;text-align:center;font-weight:700}
+
+  /* analytics layer spanning the flow */
+  .layer-conn{display:flex;justify-content:center;align-items:center;color:var(--teal,#0d9488);font-size:20px;margin:10px 0 0}
+  .analytics{margin-top:6px;border:2px dashed #5eead4;background:linear-gradient(180deg,#f0fdfa,#ecfeff);border-radius:16px;padding:16px 16px 14px;position:relative}
+  .analytics-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#0d9488;color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 14px;border-radius:20px;white-space:nowrap}
+  .analytics .lead{font-size:11px;color:#0f766e;text-align:center;margin-bottom:12px;font-weight:600}
+  .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .metric{background:#fff;border:1px solid #99f6e4;border-radius:10px;padding:10px 8px;text-align:center}
+  .metric .mt{font-size:11px;font-weight:800;color:#0f766e;line-height:1.2}
+  .metric .md{font-size:9.5px;color:var(--gray);margin-top:4px;line-height:1.35}
+
+  .legend{margin-top:26px;display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:11px;color:var(--gray)}
+  .legend b{color:var(--ink)}
+  .footnote{margin-top:18px;text-align:center;font-size:11px;color:var(--gray)}
+  .footnote b{color:var(--navy)}
+
+  @media print{body{background:#fff;padding:0}.wrap{max-width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Intake Agent — End-to-End Flow</h1>
+    <div class="sub">From <b>any intake channel</b> &rarr; an autonomous, auditable agent &rarr; <b>submission to your end systems</b>. No rip-and-replace &mdash; human in the loop.</div>
+  </header>
+
+  <div class="flow">
+    <!-- INPUTS -->
+    <div>
+      <div class="band-label">Intake Channels</div>
+      <div class="col">
+        <div class="node in"><div class="ic">&#x1F4E0;</div><div class="t">Fax</div><div class="s">Referral packages &mdash; 3 documents</div></div>
+        <div class="node in"><div class="ic">&#x1F4E7;</div><div class="t">Email</div><div class="s">Referrals &amp; CM replies</div></div>
+        <div class="node in"><div class="ic">&#x1F4DE;</div><div class="t">Voice</div><div class="s">Live AI intake line, 24/7</div></div>
+        <div class="node in"><div class="ic">&#x1F5C2;&#xFE0F;</div><div class="t">Portal / Upload</div><div class="s">Payer &amp; partner portals</div></div>
+      </div>
+    </div>
+
+    <div class="conn">&#x2192;</div>
+
+    <!-- AGENT CORE -->
+    <div>
+      <div class="band-label">The Intake Agent &mdash; Autonomous, Auditable</div>
+      <div class="agent">
+        <div class="agent-tag">Agent 1 &middot; Intake &mdash; built &amp; live</div>
+        <div class="stages">
+          <div class="stage"><div class="num">1</div><div class="st">Capture &amp; Read</div><div class="sd">Reads every page or answers the call &mdash; no guessing</div></div>
+          <div class="stage"><div class="num">2</div><div class="st">Extract</div><div class="sd">25 structured fields, each traced to its source</div></div>
+          <div class="stage"><div class="num">3</div><div class="st">Validate</div><div class="sd">Checked against cited CMS rules (Knowledge Graph)</div></div>
+          <div class="stage"><div class="num">4</div><div class="st">Reason &amp; Score</div><div class="sd">Resolves conflicts; scores its own confidence</div></div>
+          <div class="stage"><div class="num">5</div><div class="st">Gaps &amp; Outreach</div><div class="sd">Email then voice to the case manager for missing items</div></div>
+          <div class="stage"><div class="num">6</div><div class="st">Route-Ready Episode</div><div class="sd">Complete record + full audit trail, locked</div></div>
+        </div>
+
+        <div class="hitl"><span>&#x1F464;</span> Human in the loop &mdash; confidence below threshold escalates to a specialist; a person approves every outbound action</div>
+
+        <div class="foundation">
+          <div class="fbar kg"><span class="fi">&#x1F578;&#xFE0F;</span> OWL Knowledge Graph &mdash; 24 deterministic, CMS-cited rules</div>
+          <div class="fbar audit"><span class="fi">&#x1F50E;</span> Audit trail &mdash; every read, rule, decision &amp; action logged</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn">&#x2192;</div>
+
+    <!-- END SYSTEMS -->
+    <div>
+      <div class="band-label">Submission to End Systems</div>
+      <div class="col">
+        <div class="node out"><div class="ic">&#x1F4C5;</div><div class="t">Scheduling</div><div class="s">Vendor dispatch &amp; appointments</div></div>
+        <div class="node out"><div class="ic">&#x1F3E6;</div><div class="t">Billing / Claims</div><div class="s">Claim generation &amp; ERA posting</div></div>
+        <div class="node out"><div class="ic">&#x1F3E5;</div><div class="t">Payer / EHR</div><div class="s">Auth, eligibility, records</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer-conn">&#x2195;&#xFE0F;</div>
+  <div class="analytics">
+    <div class="analytics-tag">Analytics &amp; Insights Layer</div>
+    <div class="lead">Observes every episode across the whole flow &mdash; a live management view, not a separate report.</div>
+    <div class="metrics">
+      <div class="metric"><div class="mt">Throughput &amp; Latency</div><div class="md">Volume, avg &amp; p95 processing time</div></div>
+      <div class="metric"><div class="mt">Auto-Route Rate</div><div class="md">% resolved with no human touch</div></div>
+      <div class="metric"><div class="mt">Escalation Rate</div><div class="md">% routed to a specialist &amp; why</div></div>
+      <div class="metric"><div class="mt">Confidence &amp; KG Outcomes</div><div class="md">Avg confidence, rules fired/flagged</div></div>
+      <div class="metric"><div class="mt">Top Gaps &amp; Jurisdiction</div><div class="md">Most common missing fields, SLA mix</div></div>
+      <div class="metric"><div class="mt">Cost per Referral</div><div class="md">Live token + infra cost at volume</div></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><b>&#x2192;</b> Flow direction</span>
+    <span><b style="color:var(--blue)">Blue</b> intake</span>
+    <span><b style="color:var(--purple)">Purple</b> deterministic rule engine</span>
+    <span><b style="color:var(--amber)">Amber</b> human in the loop</span>
+    <span><b style="color:var(--green)">Green</b> end systems</span>
+  </div>
+
+  <div class="footnote">
+    Connects via <b>API, RPA, or file</b> &mdash; adapts to your platform. Your data stays in your environment.
+    &nbsp;&middot;&nbsp; Intake is <b>Agent 1 of an 8-agent value chain</b>, referral to payment.
+  </div>
+</div>
+</body>
+</html>

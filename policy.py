@@ -27,12 +27,19 @@ def detect_state(fields: dict) -> str:
     return m.group(1) if m else ""
 
 
-def assess_jurisdiction(fields: dict) -> dict:
+def assess_jurisdiction(fields: dict, sla_map: dict = None) -> dict:
+    """SLA per jurisdiction. When sla_map is supplied (from the active SOP — a
+    {state: business_days} mapping) it governs; otherwise the built-in defaults."""
     state = detect_state(fields)
-    sla = JURISDICTION_SLA.get(state, _DEFAULT_SLA)
-    priority = "HIGH" if sla["days"] <= 2 else ("MED" if sla["days"] <= 3 else "STD")
-    return {"state": state or "—", "sla_days": sla["days"],
-            "note": sla["note"], "sla_priority": priority}
+    if sla_map and state in sla_map:
+        days = int(sla_map[state])
+        note = f"Per SOP jurisdiction rule — {state} {days}-day turnaround"
+    else:
+        sla = JURISDICTION_SLA.get(state, _DEFAULT_SLA)
+        days, note = sla["days"], sla["note"]
+    priority = "HIGH" if days <= 2 else ("MED" if days <= 3 else "STD")
+    return {"state": state or "—", "sla_days": days,
+            "note": note, "sla_priority": priority}
 
 
 # ── Parking Lot 9: confidence-tiered autonomy ─────────────────────────────────
@@ -40,13 +47,17 @@ def assess_jurisdiction(fields: dict) -> dict:
 TIER_HIGH = 90   # >= → fully autonomous (auto-route)
 TIER_MED = 80    # >= → act but flag for human spot-check; < → escalate
 
-def confidence_tier(conf) -> dict:
+def confidence_tier(conf, auto_min: float = None, spotcheck_min: float = None) -> dict:
+    """Autonomy tier from confidence. auto_min / spotcheck_min, when supplied (from
+    the active SOP confidence_gate clause), govern the cut-offs; else the defaults."""
+    hi = TIER_HIGH if auto_min is None else float(auto_min)
+    med = TIER_MED if spotcheck_min is None else float(spotcheck_min)
     try:
         c = float(conf)
     except (TypeError, ValueError):
         return {"tier": "UNKNOWN", "autonomy": "review", "label": "needs review"}
-    if c >= TIER_HIGH:
+    if c >= hi:
         return {"tier": "HIGH", "autonomy": "autonomous", "label": "auto-route"}
-    if c >= TIER_MED:
+    if c >= med:
         return {"tier": "MEDIUM", "autonomy": "spot-check", "label": "act + human spot-check"}
     return {"tier": "LOW", "autonomy": "escalate", "label": "escalate to specialist"}

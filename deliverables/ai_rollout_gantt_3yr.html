@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Rollout — 3-Year Gantt</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: Calibri, Arial, sans-serif; background: #1a2a4a; }
+body { display: flex; flex-direction: column; }
+.s-hdr { background: #1a2a4a; padding: 14px 24px 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-shrink: 0; }
+.s-tag { font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #7fafd4; margin-bottom: 3px; }
+.s-hdr h1 { font-size: 19pt; font-weight: bold; color: #fff; line-height: 1.1; margin-bottom: 5px; }
+.s-sub { font-size: 9pt; color: #a0b8d0; line-height: 1.5; }
+.s-sub strong { color: #fff; }
+.s-legend { display: flex; flex-wrap: wrap; gap: 10px 14px; justify-content: flex-end; font-size: 8.5pt; color: #d0dff0; align-items: center; max-width: 540px; }
+.s-legend .li { display: flex; align-items: center; gap: 5px; }
+.s-legend .lb { display: inline-block; width: 22px; height: 13px; border-radius: 2px; border: 1px solid rgba(0,0,0,.15); }
+.s-legend .dia { color: #1a2a4a; font-size: 12pt; line-height: 1; }
+.s-legend .chip { font-size: 6.5pt; font-weight: 800; color: #fff; border-radius: 3px; padding: 1px 4px; }
+
+.s-body { background: #f0f2f5; padding: 12px 18px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.grid { flex: 1; display: flex; flex-direction: column; }
+
+.row { display: flex; align-items: stretch; border-bottom: 1px solid #ccd3df; flex: 1; min-height: 0; }
+.row.head { flex: 0 0 32px; border-bottom: 2px solid #b8c2d4; }
+.lab { width: 230px; flex-shrink: 0; padding: 4px 12px; border-right: 2px solid #b8c2d4; display: flex; flex-direction: column; justify-content: center; background: #fff; }
+.row.head .lab { background: #1a2a4a; }
+.fn-name { font-size: 9pt; font-weight: 600; color: #1a1a2e; }
+.fn-fte  { font-size: 7pt; color: #888; margin-top: 1px; }
+.row.head .lab .fn-name { color: #fff; text-transform: uppercase; letter-spacing: .4px; font-size: 8pt; }
+
+.track { position: relative; flex: 1; min-width: 600px; background:
+    repeating-linear-gradient(to right, #6a82ac 0 1.5px, transparent 1.5px calc(100% * 12 / 36)),
+    repeating-linear-gradient(to right, #c2cad8 0 1px, transparent 1px calc(100% / 36)); }
+.track.head { background: #1a2a4a; }
+
+.blk { position: absolute; top: 50%; transform: translateY(-50%); height: 50%; min-height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 8.5pt; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.des { background: #e2e9f5; color: #2a3a5a; border: 1px solid #c2cfe4; }
+.btr { background: #aebccf; color: #21304a; border: 1px solid #93a3ba; }
+.gl { position: absolute; top: 50%; transform: translateY(-50%); height: 64%; min-height: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(26,42,74,.30); border-radius: 4px; line-height: 1; }
+.gl .d { color: #1a2a4a; font-size: 11pt; } .gl .w { color: #334155; font-size: 6pt; font-weight: 800; margin-top: 0; }
+.mk { position: absolute; top: 3px; transform: translateX(-50%); font-size: 6.5pt; font-weight: 800; color: #fff; border-radius: 3px; padding: 1px 5px; line-height: 1; white-space: nowrap; z-index: 3; }
+.mk.t { background: #0ea5e9; } .mk.p { background: #f59e0b; }
+.cont { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 7pt; font-weight: 800; color: #8a98ad; white-space: nowrap; }
+
+.yrlbl { position: absolute; top: 4px; font-size: 8.5pt; font-weight: bold; color: #fff; transform: translateX(-50%); }
+.mtick { position: absolute; top: 18px; font-size: 6pt; color: #b8cce0; transform: translateX(-50%); }
+.foot { background:#1a2a4a; color:#a0b8d0; font-size:8pt; padding:8px 24px; line-height:1.5; flex-shrink:0; }
+.foot b { color:#fff; } .foot .warn { color:#ffb454; }
+@media print { @page { size: landscape; margin: 5mm; } html,body{height:auto} body{background:#fff} .s-body{height:auto} .row{min-height:42px} }
+</style>
+</head>
+<body>
+
+<div class="s-hdr">
+  <div>
+    <div class="s-tag">Implementation Roadmap · 3-Year View (Years 1–3)</div>
+    <h1>AI Rollout — Implementation Gantt</h1>
+    <div class="s-sub">13 processes · <strong>People-first, then AI</strong> · Waves <strong>1–3 live within 36 months</strong>; W4–W5 continue in Years 4–5 · Baseline ≈ <strong>1,037 FTE</strong></div>
+  </div>
+  <div class="s-legend">
+    <div class="li"><span class="chip" style="background:#0ea5e9">TTT</span> TTT go-live</div>
+    <div class="li"><span class="chip" style="background:#f59e0b">PPL</span> People go-live</div>
+    <div class="li"><span class="lb" style="background:#e2e9f5;border-color:#c2cfe4"></span><strong>DES</strong> Design (2 mo)</div>
+    <div class="li"><span class="lb" style="background:#aebccf;border-color:#93a3ba"></span><strong>BTR</strong> Build·Test·Run (3 mo)</div>
+    <div class="li"><span class="dia">&#x25C6;</span> <strong>AI Go-Live</strong>:
+      <span class="lb" style="background:#bfdbfe"></span>W1 <span class="lb" style="background:#99f6e4"></span>W2 <span class="lb" style="background:#bbf7d0"></span>W3</div>
+  </div>
+</div>
+
+<div class="s-body"><div class="grid" id="grid"></div></div>
+
+<div class="foot">
+  <b>3-Year window:</b> each process completes <b>Waves 1–3</b> of AI go-live by ~Month 29 (DES → BTR → ◆ per wave), after the early <b>TTT</b> and <b>People</b> go-lives. <b>Waves 4–5</b> (deeper automation) roll out across <b>Years 4–5</b> — shown in the full 54-month view.
+  <span class="warn">&nbsp;* Intake · Data FTE obscured by the scan watermark — shown as ~130; please verify.</span>
+</div>
+
+<script>
+const TL = 36;
+const WC = ['#bfdbfe','#99f6e4','#bbf7d0'];   // light per-wave tones (W1–W3 in this view)
+const DATA = [
+  ['Cash Apps · Wave 1 Data','231',2,3,[[1,3,6],[9,11,14],[21,23,26],[33,35,38],[45,47,50]]],
+  ['Cash Apps · Wave 2 Voice — Mexico (Spanish)','27',2,3,[[2,4,7],[10,12,15],[22,24,27],[34,36,39],[46,48,51]]],
+  ['Cash Apps · Wave 3 Voice — PHP (English)','32',2,3,[[2,4,7],[10,12,15],[22,24,27],[34,36,39],[46,48,51]]],
+  ['Collections','35',2,3,[[3,5,8],[11,13,16],[23,25,28],[35,37,40],[47,49,52]]],
+  ['Billing','46',2,3,[[1,3,6],[9,11,14],[21,23,26],[33,35,38],[45,47,50]]],
+  ['Program Support','62',3,4,[[3,5,8],[10,12,15],[22,24,27],[34,36,39],[46,48,51]]],
+  ['Documents Mgmt · Wave 1 Data','113',3,4,[[2,4,7],[9,11,14],[21,23,26],[33,35,38],[45,47,50]]],
+  ['Documents Mgmt · Wave 2 Voice','28',3,4,[[4,6,9],[11,13,16],[23,25,28],[35,37,40],[47,49,52]]],
+  ['Intake · Data *','~130',4,5,[[3,5,8],[9,11,14],[21,23,26],[33,35,38],[45,47,50]]],
+  ['Intake · Voice','74',4,5,[[5,7,10],[11,13,16],[23,25,28],[35,37,40],[47,49,52]]],
+  ['Scheduling · Wave 1','82.5',4,5,[[6,8,11],[12,14,17],[24,26,29],[36,38,41],[48,50,53]]],
+  ['Scheduling · Wave 2','82.5',4,5,[[6,8,11],[12,14,17],[24,26,29],[36,38,41],[48,50,53]]],
+  ['Others','94',2,3,[[4,6,9],[12,14,17],[24,26,29],[36,38,41],[48,50,53]]],
+];
+const L = m => ((m-1)/TL*100) + '%';
+const Wd = n => (n/TL*100) + '%';
+const C = m => ((m-0.5)/TL*100) + '%';
+const grid = document.getElementById('grid');
+
+let head = '<div class="row head"><div class="lab"><span class="fn-name">Process · FTE</span></div><div class="track head">';
+for (let y=1; y<=3; y++){ head += `<div class="yrlbl" style="left:${C((y-1)*12+6)}">Year ${y}</div>`; }
+for (let m=3; m<=TL; m+=3){ head += `<div class="mtick" style="left:${C(m)}">M${m}</div>`; }
+head += '</div></div>';
+grid.innerHTML = head;
+
+for (const [name, fte, ttt, ppl, waves] of DATA){
+  let r = `<div class="row"><div class="lab"><span class="fn-name">${name}</span><span class="fn-fte">${fte} FTE</span></div><div class="track">`;
+  let hasLater = false;
+  waves.forEach(([d,b,g], wi) => {
+    if (g > TL){ hasLater = true; return; }     // W4–W5 go beyond the 3-year window
+    r += `<div class="blk des" style="left:${L(d)};width:${Wd(b-d)}">DES</div>`;
+    r += `<div class="blk btr" style="left:${L(b)};width:${Wd(g-b)}">BTR</div>`;
+    r += `<div class="gl" style="left:${L(g)};width:${Wd(1)};background:${WC[wi]}"><span class="d">&#x25C6;</span><span class="w">W${wi+1}</span></div>`;
+  });
+  if (ttt<=TL) r += `<div class="mk t" style="left:${C(ttt)}">TTT</div>`;
+  if (ppl<=TL) r += `<div class="mk p" style="left:${C(ppl)}">PPL</div>`;
+  if (hasLater) r += `<div class="cont">&#x203A;&#x203A; W4–W5 · Yr 4–5</div>`;
+  r += '</div></div>';
+  grid.innerHTML += r;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOP-Driven Agent — Maturity Roadmap</title>
+<style>
+  :root{ --navy:#1e3a5f; --ink:#0f172a; --gray:#475569; --line:#e2e8f0;
+    --green:#16a34a; --blue:#2563eb; --purple:#7c3aed; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',-apple-system,system-ui,sans-serif;background:#f4f6f9;color:var(--ink);padding:30px 32px 40px}
+  .wrap{max-width:1240px;margin:0 auto}
+  .tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#0f766e;background:rgba(13,148,136,.1);border:1px solid rgba(13,148,136,.25);border-radius:99px;padding:4px 12px;margin-bottom:10px}
+  h1{font-size:25px;color:var(--navy);letter-spacing:-.02em}
+  .lead{font-size:14px;color:var(--gray);margin-top:7px;line-height:1.55;max-width:920px}
+  .lead b{color:var(--ink)}
+
+  .rail{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr;align-items:stretch;gap:0;margin-top:24px}
+  .arrow{display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:26px;font-weight:700}
+  .hz{background:#fff;border:1px solid var(--line);border-radius:14px;padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .hz .top{padding:14px 16px;color:#fff}
+  .h1 .top{background:linear-gradient(135deg,#15803d,#16a34a)}
+  .h2 .top{background:linear-gradient(135deg,#1e40af,#2563eb)}
+  .h3 .top{background:linear-gradient(135deg,#5b21b6,#7c3aed)}
+  .badge{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
+  .hz h2{font-size:16px;margin:3px 0 2px;font-weight:800}
+  .when{font-size:11px;font-weight:700;opacity:.92}
+  .here{display:inline-block;margin-top:7px;font-size:9.5px;font-weight:800;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);border-radius:20px;padding:2px 9px}
+  .body{padding:13px 16px;flex:1}
+  .row{margin-bottom:11px}
+  .k{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:3px}
+  .v{font-size:12px;color:#334155;line-height:1.5}
+  .v b{color:var(--ink)}
+  .pill{display:inline-block;font-size:9.5px;font-weight:800;border-radius:20px;padding:2px 9px}
+  .p-live{background:#dcfce7;color:#15803d} .p-next{background:#dbeafe;color:#1d4ed8} .p-future{background:#ede9fe;color:#6d28d9}
+
+  .guards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+  .g{background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:10px;padding:13px 15px}
+  .g .gt{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:4px}
+  .g .gd{font-size:12px;color:var(--gray);line-height:1.5}
+  .seclabel{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin:24px 0 10px;display:flex;align-items:center;gap:10px}
+  .seclabel::after{content:'';flex:1;height:1px;background:var(--line)}
+  .foot{margin-top:20px;font-size:11px;color:var(--gray);line-height:1.6}
+  .foot b{color:var(--navy)}
+  @media print{ @page{size:landscape;margin:8mm} body{background:#fff;padding:0} }
+  @media (max-width:900px){ .rail{grid-template-columns:1fr;gap:12px} .arrow{transform:rotate(90deg);height:24px} .guards{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tag">SOP-Driven Agent · Maturity Roadmap</div>
+  <h1>Your SOPs run the agent — today, and increasingly over time</h1>
+  <div class="lead">The agent operates on <b>your Standard Operating Procedures</b>. Today every decision is <b>applied per case and traced to its SOP clause and the regulation behind it</b>. The roadmap deepens that from <b>configured‑from‑your‑SOPs</b> → <b>generated‑from‑your‑SOPs</b> → a <b>governed learning loop where the SOPs improve from the agent's own evidence.</b></div>
+
+  <div class="rail">
+    <!-- H1 -->
+    <div class="hz h1">
+      <div class="top">
+        <div class="badge">Horizon 1</div>
+        <h2>SOP‑Traced</h2>
+        <div class="when">Today · Live</div>
+        <div class="here">&#x25B6; You are here</div>
+      </div>
+      <div class="body">
+        <div class="row"><div class="k">What it is</div><div class="v">The agent runs on a rule library <b>derived from your SOPs</b> and applies each rule to every case in real time.</div></div>
+        <div class="row"><div class="k">What's proven</div><div class="v">Every decision <b>traced to its SOP clause + regulation</b> — visible on each episode ("SOPs Applied") and in the audit trail.</div></div>
+        <div class="row"><div class="k">Maturity</div><div class="v"><span class="pill p-live">Configured‑from‑SOP · fully auditable</span></div></div>
+      </div>
+    </div>
+    <div class="arrow">&#x2192;</div>
+    <!-- H2 -->
+    <div class="hz h2">
+      <div class="top">
+        <div class="badge">Horizon 2</div>
+        <h2>SOP‑Led, Multi‑Source</h2>
+        <div class="when">Next · deployment (weeks)</div>
+      </div>
+      <div class="body">
+        <div class="row"><div class="k">What it is</div><div class="v">SOPs are the <b>primary authority</b>; rules are <b>generated from the SOP</b> and augmented by definitive sources — CMS ICD‑10 / LCD / NCD, payer policy, state WC regs. Thresholds bind directly to the SOP.</div></div>
+        <div class="row"><div class="k">Key design</div><div class="v"><b>Precedence:</b> SOP‑led for operational decisions, with the regulatory floor as a guardrail the SOP can't override (conflict → escalate).</div></div>
+        <div class="row"><div class="k">Maturity</div><div class="v"><span class="pill p-next">Generated‑from‑SOP · zero translation layer</span></div></div>
+      </div>
+    </div>
+    <div class="arrow">&#x2192;</div>
+    <!-- H3 -->
+    <div class="hz h3">
+      <div class="top">
+        <div class="badge">Horizon 3</div>
+        <h2>SOP‑Learning (Closed Loop)</h2>
+        <div class="when">2–3 years</div>
+      </div>
+      <div class="body">
+        <div class="row"><div class="k">What it is</div><div class="v">Decision history + human overrides surface patterns → the agent <b>proposes SOP refinements</b> (new rules, tuned thresholds, edge cases) → humans approve under change control.</div></div>
+        <div class="row"><div class="k">The shift</div><div class="v">The evolving SOP becomes the <b>living source of truth</b>; the decision&#8596;SOP record <b>is</b> the audit trail. SOPs and decisions co‑evolve.</div></div>
+        <div class="row"><div class="k">Maturity</div><div class="v"><span class="pill p-future">Self‑improving · evidence‑grounded</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="seclabel">Guardrails — what keeps it defensible at every horizon</div>
+  <div class="guards">
+    <div class="g">
+      <div class="gt">&#x1F464; Human‑governed SOP changes</div>
+      <div class="gd">The agent <b>proposes</b>, the Operations Lead <b>approves</b> under change control. The agent never silently rewrites its own SOPs — so it's never "grading its own homework," and the audit trail stays trustworthy.</div>
+    </div>
+    <div class="g">
+      <div class="gt">&#x2696;&#xFE0F; SOP‑led, regulation‑bounded</div>
+      <div class="gd">SOPs drive operational decisions, but can never override the <b>regulatory floor</b> (CMS / state WC). Any conflict is escalated, not auto‑resolved — compliance is the hard boundary.</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>Positioning today:</b> "The agent runs on your SOPs — applied per case and traced to clause + regulation. Today that's configured‑from‑your‑SOPs; the roadmap is SOP‑led + multi‑source next, and a governed learning loop where your SOPs improve from the agent's own evidence over 2–3 years."
+    &nbsp;·&nbsp; <b>Next step:</b> Horizon 2 design (precedence model + binding thresholds to the SOP) — scheduled for review.
+  </div>
+</div>
+</body>
+</html>

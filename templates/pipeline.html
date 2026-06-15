@@ -883,16 +883,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   {% endif %}
 
   {% else %}
-  {# ── Other episodes: single conflict + reference demo cards ── #}
+  {# ── This episode's real ICD outcome (single-conflict or clean) ── #}
   <div class="intel-card" style="background:var(--gray-l);border-color:var(--gray-m)">
     <div class="intel-hd icd-log-hd">
       <span>&#x1F9E0; ICD Conflict Log</span>
-      <span style="background:var(--dark);color:#fff;padding:2px 9px;border-radius:20px;font-size:9px;font-weight:800">3 CONFLICTS IN BATCH</span>
-      <span style="margin-left:auto;font-size:10px;font-weight:700;color:var(--green)">&#x2713; 2 AI-Resolved</span>
-      <span style="margin-left:10px;font-size:10px;font-weight:700;color:var(--purple)">&#x26A0; 1 Escalated</span>
+      {% if icd_conf %}
+        {% if escalate %}<span style="margin-left:auto;font-size:10px;font-weight:700;color:var(--purple)">&#x26A0; Escalated</span>
+        {% else %}<span style="margin-left:auto;font-size:10px;font-weight:700;color:var(--green)">&#x2713; AI-Resolved</span>{% endif %}
+      {% else %}<span style="margin-left:auto;font-size:10px;font-weight:700;color:var(--green)">&#x2713; No conflict</span>{% endif %}
     </div>
 
-    <!-- Conflict 1: This episode -->
+    <!-- This episode (from the agent's real extraction) -->
     <div class="conf-block-wrap">
       <div class="conf-block-hd">
         <div class="conf-block-label">
@@ -915,26 +916,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       {% else %}
       <div style="font-size:12px;color:var(--green-d);padding:6px 2px">&#x2705; All three documents agree — no conflict in this episode</div>
       {% endif %}
-    </div>
-
-    <!-- Conflict 2: Reference AI resolved -->
-    <div class="conf-block-wrap">
-      <div class="conf-block-hd"><div class="conf-block-label"><div class="conf-block-num">2</div><div class="conf-block-ep">Reference · WC-2026-084438 · Robert Kim</div></div><span class="outcome-badge ob-resolved">&#x2713; AI RESOLVED · 88%</span></div>
-      <div class="icd-doc conflict"><div class="icd-doc-name">&#x1F4C4; Referral Form</div><div class="icd-code-val">M79.3</div><span class="sb sb-miss" style="font-size:9px;padding:2px 7px">OVERRIDDEN</span></div>
-      <div class="icd-doc match"><div class="icd-doc-name">&#x1F4CB; Clinical Notes</div><div class="icd-code-val">M79.31</div><span class="sb sb-clin" style="font-size:9px;padding:2px 7px">AUTHORITY</span></div>
-      <div class="icd-doc match"><div class="icd-doc-name">&#x1F48A; Prescription</div><div class="icd-code-val">M79.31</div><span class="sb sb-clin" style="font-size:9px;padding:2px 7px">AUTHORITY</span></div>
-      <div class="icd-doc ai-sel"><div class="icd-doc-name" style="font-weight:800;color:var(--blue)">&#x2713; AI Selected</div><div class="icd-code-val">M79.31</div><span style="background:var(--blue);color:#fff;padding:2px 9px;border-radius:20px;font-size:9px;font-weight:800">AI SELECTED</span></div>
-      <div class="conf-row conf-high" style="margin-top:8px"><div class="conf-lbl">AI Confidence</div><div class="conf-track"><div class="conf-bar" style="width:88%"></div></div><div class="conf-val">88%</div></div>
-    </div>
-
-    <!-- Conflict 3: Escalation panel -->
-    <div class="conf-block-wrap esc-wrap">
-      <div class="conf-block-hd"><div class="conf-block-label"><div class="conf-block-num esc-num">3</div><div class="conf-block-ep" style="color:var(--purple-d)">Reference · WC-2026-084462 · Sandra Mitchell</div></div><span class="outcome-badge ob-escalated">&#x1F6A8; ESCALATED — MANUAL REVIEW</span></div>
-      <div class="icd-doc conflict"><div class="icd-doc-name">&#x1F4C4; Referral Form</div><div class="icd-code-val">M47.812</div><span class="sb sb-miss" style="font-size:9px;padding:2px 7px">DISPUTED</span></div>
-      <div class="icd-doc conflict" style="background:#fff3e0;border-color:#fb8c00"><div class="icd-doc-name">&#x1F4CB; Clinical Notes</div><div class="icd-code-val" style="color:var(--yellow-d)">M47.816</div><span class="sb" style="background:#fff3e0;color:#e65100;font-size:9px;padding:2px 7px;border:1px solid #fb8c00">SPLIT</span></div>
-      <div class="icd-doc conflict"><div class="icd-doc-name">&#x1F48A; Prescription</div><div class="icd-code-val">M47.812</div><span class="sb sb-miss" style="font-size:9px;padding:2px 7px">DISPUTED</span></div>
-      <div class="conf-row conf-low" style="margin-top:8px"><div class="conf-lbl">AI Confidence</div><div class="conf-track"><div class="conf-bar" style="width:71%"></div></div><div class="conf-val">71%</div></div>
-      <div style="background:rgba(124,58,237,.08);border:1px solid var(--purple-m);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:11px;color:var(--purple-d);line-height:1.6"><b>&#x1F6A8; Escalation Triggered:</b> Form and prescription agree on M47.812 (lumbar L1–L4). Clinical notes say M47.816 (lumbar L4–L5). Evidence split 2:1 — insufficient to resolve automatically. Confidence 71% below 80% threshold. <b>Agent does not guess.</b> Routed to specialist review queue.</div>
     </div>
   </div>
 

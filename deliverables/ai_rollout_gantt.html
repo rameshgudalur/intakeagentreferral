@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Rollout — Implementation Gantt</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { font-family: Calibri, Arial, sans-serif; background: #1a2a4a; }
+.s-hdr { background: #1a2a4a; padding: 12px 20px 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+.s-tag { font-size: 7.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #7fafd4; margin-bottom: 3px; }
+.s-hdr h1 { font-size: 16pt; font-weight: bold; color: #fff; line-height: 1.1; margin-bottom: 4px; }
+.s-sub { font-size: 8pt; color: #a0b8d0; line-height: 1.5; }
+.s-sub strong { color: #fff; }
+.s-legend { display: flex; flex-wrap: wrap; gap: 10px 14px; justify-content: flex-end; font-size: 8pt; color: #d0dff0; align-items: center; max-width: 600px; }
+.s-legend .li { display: flex; align-items: center; gap: 5px; }
+.s-legend .lb { display: inline-block; width: 20px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,.15); }
+.s-legend .dia { color: #1a2a4a; font-size: 11pt; line-height: 1; }
+.s-legend .chip { font-size:6pt; font-weight:800; color:#fff; border-radius:3px; padding:1px 4px; }
+
+.s-body { background: #f0f2f5; padding: 10px 14px 14px; overflow: auto; height: calc(100vh - 92px); }
+.grid { min-width: 1120px; }
+
+/* rows */
+.row { display: flex; align-items: stretch; border-bottom: 1px solid #ccd3df; }
+.row.head { border-bottom: 2px solid #b8c2d4; background: #1a2a4a; }
+.lab { width: 196px; flex-shrink: 0; padding: 4px 8px; border-right: 2px solid #b8c2d4; display: flex; flex-direction: column; justify-content: center; background:#fff; }
+.row.head .lab { background:#1a2a4a; }
+.fn-name { font-size: 7.5pt; font-weight: 600; color: #1a1a2e; }
+.fn-fte  { font-size: 6pt; color: #888; margin-top: 1px; }
+.row.head .lab .fn-name { color:#fff; text-transform:uppercase; letter-spacing:.4px; font-size:7pt; }
+
+/* timeline track with month + year gridlines baked into the background */
+.track { position: relative; flex: 1; height: 34px; min-width: 920px;
+  background:
+    repeating-linear-gradient(to right, #6a82ac 0 1.5px, transparent 1.5px calc(100% * 12 / 54)),
+    repeating-linear-gradient(to right, #c2cad8 0 1px, transparent 1px calc(100% / 54));
+}
+.track.head { height: 30px; background: #1a2a4a; }
+
+/* phase bars */
+.blk { position: absolute; top: 12px; height: 16px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 6.5pt; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.des { background: #e2e9f5; color: #2a3a5a; border: 1px solid #c2cfe4; }
+.btr { background: #aebccf; color: #21304a; border: 1px solid #93a3ba; }
+/* AI go-live cell (one-month, per-wave light tone) */
+.gl { position: absolute; top: 8px; height: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(26,42,74,.30); border-radius: 3px; line-height: 1; }
+.gl .d { color: #1a2a4a; font-size: 8pt; }
+.gl .w { color: #334155; font-size: 4.5pt; font-weight: 800; margin-top: -1px; }
+/* milestone chips floated above the bars */
+.mk { position: absolute; top: 0px; transform: translateX(-50%); font-size: 5pt; font-weight: 800; color: #fff; border-radius: 3px; padding: 1px 4px; line-height: 1; white-space: nowrap; z-index: 3; }
+.mk.t { background: #0ea5e9; } .mk.p { background: #f59e0b; }
+
+/* header scale */
+.yrlbl { position: absolute; top: 3px; font-size: 7pt; font-weight: bold; color: #fff; transform: translateX(-50%); }
+.mtick { position: absolute; top: 17px; font-size: 5pt; color: #b8cce0; transform: translateX(-50%); }
+
+.foot { background:#1a2a4a; color:#a0b8d0; font-size:7.5pt; padding:7px 20px; line-height:1.5; }
+.foot b { color:#fff; } .foot .warn { color:#ffb454; }
+@media print { @page { size: landscape; margin: 6mm; } body{background:#fff} .s-body{height:auto;overflow:visible} .grid{min-width:0} }
+</style>
+</head>
+<body>
+
+<div class="s-hdr">
+  <div>
+    <div class="s-tag">Implementation Roadmap · ~54-Month View</div>
+    <h1>AI Rollout — Implementation Gantt</h1>
+    <div class="s-sub">13 processes · <strong>People-first, then AI</strong> — TTT &amp; People go-lives, then <strong>5 successive AI waves</strong> each (Design → Build / Test / Run → AI Go-Live) · Baseline ≈ <strong>1,037 FTE</strong></div>
+  </div>
+  <div class="s-legend">
+    <div class="li"><span class="chip" style="background:#0ea5e9">TTT</span> TTT go-live</div>
+    <div class="li"><span class="chip" style="background:#f59e0b">PPL</span> People go-live</div>
+    <div class="li"><span class="lb" style="background:#e2e9f5;border-color:#c2cfe4"></span><strong>DES</strong> — Design (2 mo)</div>
+    <div class="li"><span class="lb" style="background:#aebccf;border-color:#93a3ba"></span><strong>BTR</strong> — Build · Test · Run (3 mo)</div>
+    <div class="li"><span class="dia">&#x25C6;</span> <strong>AI Go-Live</strong>:
+      <span class="lb" style="background:#bfdbfe"></span>W1 <span class="lb" style="background:#99f6e4"></span>W2 <span class="lb" style="background:#bbf7d0"></span>W3 <span class="lb" style="background:#fde68a"></span>W4 <span class="lb" style="background:#ddd6fe"></span>W5</div>
+  </div>
+</div>
+
+<div class="s-body"><div class="grid" id="grid"></div></div>
+
+<div class="foot">
+  <b>How to read:</b> each row is a process. Sky/amber chips are the early <b>TTT</b> and <b>People (workforce) go-lives</b>; then each AI wave runs <b>DES</b> Design (2 mo) → <b>BTR</b> Build·Test·Run (3 mo) → a <b>◆ AI Go-Live</b> (light tone per wave), repeated for Waves 1–5 over ~54 months.
+  <span class="warn">&nbsp;* Intake · Data FTE was obscured by the scan watermark — shown as ~130; please verify.</span>
+</div>
+
+<script>
+const TL = 54;
+const WC = ['#bfdbfe','#99f6e4','#bbf7d0','#fde68a','#ddd6fe'];   // light per-wave go-live tones
+// [name, fte, ttt, people, waves[[design,build,golive] x5]]
+const DATA = [
+  ['Cash Apps · Wave 1 Data','231',2,3,[[1,3,6],[9,11,14],[21,23,26],[33,35,38],[45,47,50]]],
+  ['Cash Apps · Wave 2 Voice — Mexico (Spanish)','27',2,3,[[2,4,7],[10,12,15],[22,24,27],[34,36,39],[46,48,51]]],
+  ['Cash Apps · Wave 3 Voice — PHP (English)','32',2,3,[[2,4,7],[10,12,15],[22,24,27],[34,36,39],[46,48,51]]],
+  ['Collections','35',2,3,[[3,5,8],[11,13,16],[23,25,28],[35,37,40],[47,49,52]]],
+  ['Billing','46',2,3,[[1,3,6],[9,11,14],[21,23,26],[33,35,38],[45,47,50]]],
+  ['Program Support','62',3,4,[[3,5,8],[10,12,15],[22,24,27],[34,36,39],[46,48,51]]],
+  ['Documents Mgmt · Wave 1 Data','113',3,4,[[2,4,7],[9,11,14],[21,23,26],[33,35,38],[45,47,50]]],
+  ['Documents Mgmt · Wave 2 Voice','28',3,4,[[4,6,9],[11,13,16],[23,25,28],[35,37,40],[47,49,52]]],
+  ['Intake · Data *','~130',4,5,[[3,5,8],[9,11,14],[21,23,26],[33,35,38],[45,47,50]]],
+  ['Intake · Voice','74',4,5,[[5,7,10],[11,13,16],[23,25,28],[35,37,40],[47,49,52]]],
+  ['Scheduling · Wave 1','82.5',4,5,[[6,8,11],[12,14,17],[24,26,29],[36,38,41],[48,50,53]]],
+  ['Scheduling · Wave 2','82.5',4,5,[[6,8,11],[12,14,17],[24,26,29],[36,38,41],[48,50,53]]],
+  ['Others','94',2,3,[[4,6,9],[12,14,17],[24,26,29],[36,38,41],[48,50,53]]],
+];
+const L = m => ((m-1)/TL*100) + '%';     // left edge of month m
+const Wd = n => (n/TL*100) + '%';         // width of n months
+const C = m => ((m-0.5)/TL*100) + '%';    // centre of month m
+const grid = document.getElementById('grid');
+
+// header scale
+let head = '<div class="row head"><div class="lab"><span class="fn-name">Process &nbsp;·&nbsp; FTE</span></div><div class="track head">';
+for (let y=1; y*12<=TL+11; y++){
+  const start=(y-1)*12+1, end=Math.min(y*12,TL);
+  if (start>TL) break;
+  head += `<div class="yrlbl" style="left:${C(Math.floor((start+end)/2))}">Year ${y}</div>`;
+}
+for (let m=6; m<=TL; m+=6){ head += `<div class="mtick" style="left:${C(m)}">M${m}</div>`; }
+head += '</div></div>';
+grid.innerHTML = head;
+
+for (const [name, fte, ttt, ppl, waves] of DATA){
+  let r = `<div class="row"><div class="lab"><span class="fn-name">${name}</span><span class="fn-fte">${fte} FTE</span></div><div class="track">`;
+  // phase bars + go-live per wave
+  waves.forEach(([d,b,g], wi) => {
+    r += `<div class="blk des" style="left:${L(d)};width:${Wd(b-d)}">DES</div>`;
+    r += `<div class="blk btr" style="left:${L(b)};width:${Wd(g-b)}">BTR</div>`;
+    if (g<=TL) r += `<div class="gl" style="left:${L(g)};width:${Wd(1)};background:${WC[wi]}"><span class="d">&#x25C6;</span><span class="w">W${wi+1}</span></div>`;
+  });
+  // milestone chips floated above the bars (never hide a phase)
+  r += `<div class="mk t" style="left:${C(ttt)}">TTT</div>`;
+  r += `<div class="mk p" style="left:${C(ppl)}">PPL</div>`;
+  r += '</div></div>';
+  grid.innerHTML += r;
+}
+</script>
+</body>
+</html>
