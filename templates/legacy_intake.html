@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MediClaim Legacy Intake System v4.2</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#008080; font-family:'Tahoma','MS Sans Serif',Geneva,sans-serif; font-size:12px; color:#000; }
+  .app { width:760px; margin:18px auto; background:#c0c0c0; border:2px solid #000;
+         border-top-color:#dfdfdf; border-left-color:#dfdfdf; box-shadow:3px 3px 0 rgba(0,0,0,.4); }
+  .titlebar { background:linear-gradient(90deg,#000080,#1084d0); color:#fff; font-weight:bold;
+              padding:3px 6px; display:flex; align-items:center; justify-content:space-between; font-size:12px; }
+  .titlebar .ctrls span { display:inline-block; width:16px; height:14px; line-height:12px; text-align:center;
+              background:#c0c0c0; color:#000; border:1px solid #000; border-top-color:#dfdfdf; border-left-color:#dfdfdf; margin-left:2px; }
+  .menubar { background:#c0c0c0; padding:2px 6px; border-bottom:1px solid #808080; }
+  .menubar span { margin-right:14px; }
+  .menubar u { text-decoration:underline; }
+  .body { padding:14px 16px; }
+  .sys { font-size:11px; color:#000080; font-weight:bold; margin-bottom:2px; }
+  .sub { font-size:10px; color:#404040; margin-bottom:12px; }
+  fieldset { border:1px solid #808080; border-top-color:#fff; border-left-color:#fff; padding:10px 12px; margin-bottom:12px; }
+  legend { font-weight:bold; font-size:11px; padding:0 4px; }
+  table { width:100%; border-collapse:collapse; }
+  td { padding:3px 4px; vertical-align:middle; }
+  td.lbl { width:42%; text-align:right; padding-right:10px; color:#000; }
+  input { width:100%; font-family:'Courier New',monospace; font-size:12px; padding:2px 4px;
+          border:2px solid #808080; border-top-color:#000; border-left-color:#000; background:#fff; }
+  .btnrow { text-align:center; margin-top:6px; }
+  button { font-family:'Tahoma',sans-serif; font-size:12px; font-weight:bold; padding:4px 22px; min-width:90px;
+           background:#c0c0c0; border:2px solid #000; border-top-color:#dfdfdf; border-left-color:#dfdfdf; cursor:pointer; }
+  button:active { border-top-color:#000; border-left-color:#000; border-bottom-color:#dfdfdf; border-right-color:#dfdfdf; }
+  .statusbar { background:#c0c0c0; border-top:1px solid #808080; padding:2px 8px; font-size:10px; color:#404040;
+               display:flex; justify-content:space-between; }
+  /* confirmation */
+  .conf { text-align:center; padding:26px 16px; }
+  .conf .ok { font-size:34px; color:#008000; }
+  .conf .ttl { font-weight:bold; font-size:14px; margin:8px 0; }
+  .conf .num { font-family:'Courier New',monospace; font-size:22px; font-weight:bold; color:#000080;
+               background:#fff; border:2px solid #808080; border-top-color:#000; border-left-color:#000; display:inline-block; padding:6px 18px; margin:8px 0; }
+  .conf table { width:auto; margin:14px auto 0; text-align:left; font-size:11px; }
+  .conf td { padding:2px 8px; }
+  .conf td.k { color:#404040; }
+  .conf td.v { font-family:'Courier New',monospace; font-weight:bold; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <span>&#x1F5C4;&#xFE0F; MediClaim Legacy Intake System &mdash; v4.2 (Build 1998.04)</span>
+    <span class="ctrls"><span>_</span><span>&#9633;</span><span>&times;</span></span>
+  </div>
+  <div class="menubar"><span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>R</u>ecord</span><span><u>H</u>elp</span></div>
+  <div class="body">
+    <div class="sys">CLAIMS &amp; DME INTAKE &mdash; NEW REFERRAL ENTRY</div>
+    <div class="sub">Terminal 04 &middot; Operator: SYSTEM &middot; Mode: KEYED ENTRY (no API interface available)</div>
+
+    {% if confirmation %}
+    <div class="conf">
+      <div class="ok">&#x2714;</div>
+      <div class="ttl">RECORD ACCEPTED &amp; FILED TO SYSTEM OF RECORD</div>
+      <div class="num" id="conf-number">{{ confirmation }}</div>
+      <div style="font-size:11px;color:#404040">Confirmation number assigned. Referral committed to the intake ledger.</div>
+      <table>
+        {% for k, v in summary %}
+        <tr><td class="k">{{ k }}</td><td class="v">{{ v }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% else %}
+    <form method="POST" action="/legacy-submit" id="intake-form">
+      <input type="hidden" name="src_claim" value="{{ src_claim or '' }}">
+      <fieldset>
+        <legend>Claimant &amp; Coverage</legend>
+        <table>
+          <tr><td class="lbl">Claim / File No.</td><td><input name="f_claim" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Claimant Name (Last, First)</td><td><input name="f_patient" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Date of Birth</td><td><input name="f_dob" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Insurance Carrier</td><td><input name="f_carrier" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Auth Reference No.</td><td><input name="f_auth" autocomplete="off"></td></tr>
+        </table>
+      </fieldset>
+      <fieldset>
+        <legend>Equipment / Service Order</legend>
+        <table>
+          <tr><td class="lbl">HCPCS Procedure Code</td><td><input name="f_hcpcs" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Primary Diagnosis (ICD-10)</td><td><input name="f_icd" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Equipment / Service</td><td><input name="f_dme" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Quantity</td><td><input name="f_qty" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Delivery Address</td><td><input name="f_addr" autocomplete="off"></td></tr>
+        </table>
+      </fieldset>
+      <fieldset>
+        <legend>Referring Provider</legend>
+        <table>
+          <tr><td class="lbl">Referring Provider</td><td><input name="f_phys" autocomplete="off"></td></tr>
+          <tr><td class="lbl">Provider NPI</td><td><input name="f_npi" autocomplete="off"></td></tr>
+        </table>
+      </fieldset>
+      <div class="btnrow">
+        <button type="submit" id="submit">&#x2713; Submit</button>
+        <button type="reset">Clear</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+  <div class="statusbar"><span>{% if confirmation %}1 record committed{% else %}Ready &mdash; awaiting entry{% endif %}</span><span>CAPS NUM SCRL</span></div>
+</div>
+</body>
+</html>

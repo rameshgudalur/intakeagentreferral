@@ -334,6 +334,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       (5,'Email Outreach','Digital dispatch'),
       (6,'Voice Outreach','Follow-up call'),
       (7,'Route Output','Final episode'),
+      (8,'System of Record','RPA delivery'),
     ] %}
     {% for sn, sl, ss in steps %}
     <button class="step-item {% if sn == 1 %}active{% endif %}" id="nav-{{ sn }}" onclick="goStep({{ sn }})">
@@ -1356,6 +1357,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
   <div class="nav-row">
     <button class="btn btn-prev" onclick="goStep(6)">&#x2190; Voice Outreach</button>
+    <button class="btn btn-next" onclick="goStep(8)">Deliver to System of Record &#x2192;</button>
+  </div>
+</div>
+
+
+<!-- ─────────────── STEP 8: DELIVER TO SYSTEM OF RECORD (Autonomous RPA) ─────────────── -->
+<div class="step-panel" id="step-8">
+  <div class="s-tag">Step 08 — Deliver to System of Record</div>
+  <div class="s-title">Autonomous RPA — Legacy System Entry</div>
+  <div class="s-sub">The client's intake system has no usable API. A software robot operates its screen the way a person would — reading the form's own fields, mapping the agent's record to them, typing each value, and submitting. Real browser automation, not a recording.</div>
+
+  <div class="card" style="border:1px solid #cbd5e1">
+    <div class="card-hd" style="display:flex;align-items:center;gap:8px">
+      &#x1F916; RPA Delivery Bot
+      <span id="rpa-state" style="margin-left:auto;font-size:10px;font-weight:800;color:#475569;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:20px;padding:3px 11px">READY</span>
+    </div>
+    <div style="font-size:11px;color:#475569;margin:6px 0 12px;line-height:1.55">
+      Target: <b>MediClaim Legacy Intake System v4.2</b> (no API — keyed entry). The bot adapts to the
+      screen by reading its field labels live, so it isn't a brittle coordinate script. In deployment the
+      same bot is pointed at your actual application; here it drives a faithful stand-in.
+    </div>
+    <button id="rpa-btn" class="btn btn-next" style="border:none" onclick="runRpaDelivery()">&#x25B6; Run autonomous delivery</button>
+
+    <div id="rpa-result" style="display:none;margin-top:14px">
+      <div id="rpa-conf" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:9px;padding:12px 16px;margin-bottom:14px;display:none">
+        <span style="font-size:12px;font-weight:800;color:#15803d">&#x2714; Filed to system of record</span>
+        <span style="font-size:12px;color:#334155"> &middot; Confirmation <b id="rpa-conf-num" style="font-family:monospace"></b> &middot; <span id="rpa-conf-fields"></span> fields keyed by the bot</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start">
+        <div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:7px">Bot action log</div>
+          <div id="rpa-steps" style="font-family:monospace;font-size:10.5px;color:#334155;line-height:1.7;background:#0f172a;color:#e2e8f0;border-radius:9px;padding:12px 14px;max-height:340px;overflow:auto"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:7px">What the bot saw</div>
+          <div id="rpa-shots" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+    </div>
+    <div id="rpa-error" style="display:none;margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:11px 15px;font-size:11px;color:#9a3412"></div>
+  </div>
+
+  <div style="background:#1e3a5f;border-radius:10px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+    <div>
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:4px">End to End</div>
+      <div style="font-size:13px;font-weight:700;color:#fff">Read &rarr; validated &rarr; decided on your SOPs &rarr; filed in your system — no human re-keying</div>
+    </div>
+    <a href="/" style="background:var(--blue);color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">&#x2190; Back to Queue</a>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-prev" onclick="goStep(7)">&#x2190; Route Output</button>
     <a href="/" class="btn btn-next" style="text-decoration:none">Back to Queue &#x2192;</a>
   </div>
 </div>
@@ -1398,6 +1451,46 @@ function goStep(n) {
 
   // Load escalation review panel when entering step 3
   if (n === 3) loadEscalationReview();
+}
+
+// ── AUTONOMOUS RPA DELIVERY ───────────────────────────────────────────────────
+function rpaEsc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function runRpaDelivery() {
+  const btn = document.getElementById('rpa-btn');
+  const state = document.getElementById('rpa-state');
+  const err = document.getElementById('rpa-error');
+  btn.disabled = true; btn.textContent = '⏳ Bot working — driving the legacy screen…';
+  state.textContent = 'RUNNING'; state.style.color = '#1d4ed8'; state.style.background = '#dbeafe';
+  err.style.display = 'none';
+  fetch('/api/rpa-deliver/{{ claim }}', { method: 'POST' })
+    .then(r => r.json().then(j => ({ ok: r.ok, j })))
+    .then(({ ok, j }) => {
+      if (!ok || !j.ok) {
+        state.textContent = 'UNAVAILABLE'; state.style.color = '#9a3412'; state.style.background = '#ffedd5';
+        err.style.display = ''; err.textContent = (j && j.error) || 'RPA engine unavailable in this environment.';
+        btn.disabled = false; btn.textContent = '▶ Retry autonomous delivery';
+        return;
+      }
+      state.textContent = 'FILED ✔'; state.style.color = '#15803d'; state.style.background = '#dcfce7';
+      document.getElementById('rpa-result').style.display = '';
+      if (j.confirmation) {
+        document.getElementById('rpa-conf').style.display = '';
+        document.getElementById('rpa-conf-num').textContent = j.confirmation;
+        document.getElementById('rpa-conf-fields').textContent = j.fields_filled;
+      }
+      document.getElementById('rpa-steps').innerHTML =
+        (j.steps || []).map((s,i) => '<div>' + String(i+1).padStart(2,'0') + '  ' + rpaEsc(s) + '</div>').join('');
+      document.getElementById('rpa-shots').innerHTML =
+        (j.screenshots || []).map(s =>
+          '<div><div style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:3px">' + rpaEsc(s.label) + '</div>' +
+          '<img src="' + s.img + '" style="width:100%;border:1px solid #cbd5e1;border-radius:6px"></div>').join('');
+      btn.textContent = '✔ Delivered';
+    })
+    .catch(e => {
+      state.textContent = 'ERROR'; state.style.color = '#9a3412'; state.style.background = '#ffedd5';
+      err.style.display = ''; err.textContent = String(e);
+      btn.disabled = false; btn.textContent = '▶ Retry autonomous delivery';
+    });
 }
 
 // ── INLINE ESCALATION REVIEW ──────────────────────────────────────────────────

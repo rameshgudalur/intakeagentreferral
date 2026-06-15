@@ -433,7 +433,7 @@ def run_batch(folders: list, workers: int = 20):
 
 # ── API ENDPOINTS ─────────────────────────────────────────────────────────────
 
-PUBLIC_ROUTES = {"login", "static", "api_inbound_fax"}
+PUBLIC_ROUTES = {"login", "static", "api_inbound_fax", "legacy_intake", "legacy_submit"}
 
 @app.before_request
 def require_login():
@@ -1208,6 +1208,68 @@ def pipeline_view(claim):
         featured=(claim == FEATURED_CLAIM),
         sop_trace=_sop_trace(f, data.get("completeness", {}) or {}, data),
     )
+
+
+# ── AUTONOMOUS RPA — last-mile delivery into a legacy system of record ─────────
+# The legacy mock represents a client application with no usable API. The RPA bot
+# (rpa_deliver.py, real Playwright/Chromium) operates its UI to file the record.
+import hashlib
+_legacy_records = {}
+
+def _legacy_conf(seed):
+    h = hashlib.sha1(str(seed).encode("utf-8")).hexdigest()
+    return "MC-" + str(int(h[:8], 16) % 900000 + 100000)
+
+@app.route("/legacy-intake")
+def legacy_intake():
+    return render_template("legacy_intake.html", confirmation=None,
+                           src_claim=request.args.get("claim", ""))
+
+@app.route("/legacy-submit", methods=["POST"])
+def legacy_submit():
+    form = request.form
+    claim = form.get("f_claim") or form.get("src_claim") or "UNKNOWN"
+    conf = _legacy_conf(claim + "|" + form.get("f_hcpcs", ""))
+    _legacy_records[conf] = {k: form.get(k, "") for k in form.keys()}
+    summary = [
+        ("Claim / File No.", form.get("f_claim", "")),
+        ("Claimant", form.get("f_patient", "")),
+        ("HCPCS", form.get("f_hcpcs", "")),
+        ("ICD-10", form.get("f_icd", "")),
+        ("Equipment", form.get("f_dme", "")),
+        ("Auth Ref", form.get("f_auth", "")),
+    ]
+    return render_template("legacy_intake.html", confirmation=conf, summary=summary)
+
+@app.route("/api/rpa-deliver/<claim>", methods=["POST"])
+def api_rpa_deliver(claim):
+    """Drive the legacy system of record for THIS episode via real RPA (Playwright)."""
+    matches = sorted(OUTPUT_DIR.glob(f"fields-{claim}-*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not matches:
+        return jsonify({"ok": False, "error": "Episode not found"}), 404
+    f = (json.loads(matches[0].read_text(encoding="utf-8")).get("fields", {}) or {})
+    record = {
+        "claim_number":      f.get("claim_number") or claim,
+        "patient_name":      f.get("patient_name", ""),
+        "dob":               f.get("dob", ""),
+        "insurance_carrier": f.get("insurance_carrier", ""),
+        "auth_ref":          f.get("auth_ref", ""),
+        "hcpcs":             f.get("hcpcs", ""),
+        "icd_code":          f.get("icd_code", ""),
+        "dme_item":          f.get("dme_item", ""),
+        "quantity":          f.get("quantity", "1"),
+        "delivery_address":  f.get("delivery_address", ""),
+        "physician_name":    f.get("physician_name", ""),
+        "physician_npi":     f.get("physician_npi", ""),
+    }
+    try:
+        import rpa_deliver
+        result = rpa_deliver.deliver(request.host_url, record)
+        _log(f"{claim} — RPA filed to legacy system of record → {result.get('confirmation')}")
+        return jsonify(result)
+    except Exception as e:
+        _log(f"{claim} — RPA delivery unavailable: {str(e)[:90]}")
+        return jsonify({"ok": False, "error": "RPA engine unavailable here: " + str(e)[:180]}), 503
 
 
 @app.route("/api/outbound-call/<claim>", methods=["POST"])
