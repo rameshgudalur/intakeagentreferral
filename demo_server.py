@@ -1271,6 +1271,17 @@ def api_rpa_deliver(claim):
         _log(f"{claim} — RPA delivery unavailable: {str(e)[:90]}")
         return jsonify({"ok": False, "error": "RPA engine unavailable here: " + str(e)[:180]}), 503
 
+@app.route("/api/rpa-status")
+def api_rpa_status():
+    """Is the real RPA engine (Playwright/Chromium) available in this environment?
+    Lets the UI show the live control locally and a tasteful note where it isn't."""
+    try:
+        import importlib
+        importlib.import_module("playwright.async_api")
+        return jsonify({"available": True})
+    except Exception as e:
+        return jsonify({"available": False, "reason": str(e)[:140]})
+
 
 @app.route("/api/outbound-call/<claim>", methods=["POST"])
 def api_outbound_call(claim):
