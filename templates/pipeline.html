@@ -970,6 +970,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
+  <!-- ── BASE PROCESSING DRIVEN BY YOUR SOPs (this episode) ───────────── -->
+  {% if sop_trace %}
+  <div class="card" style="margin-top:14px;border:1px solid #ddd6fe;background:#f5f3ff">
+    <div class="card-hd" style="color:#6d28d9;display:flex;align-items:center;gap:8px">
+      &#x1F4DC; Base Processing Driven by Your SOPs
+      <span style="margin-left:auto;font-size:9px;font-weight:800;color:#6d28d9;background:#ede9fe;border-radius:20px;padding:3px 10px">SOP-GOVERNED</span>
+    </div>
+    <div style="font-size:11px;color:#475569;margin:4px 0 10px;line-height:1.55">The analysis above isn&rsquo;t generic logic &mdash; coding authority, CMS knowledge-graph validation, and confidence gating were governed by rules generated from <b>your SOP</b>. Each decision below traces to its clause and the regulation behind it.</div>
+    {% for t in sop_trace %}{% if t.type in ['coding_authority','coding_rule','coverage_check','confidence_gate','escalation'] %}
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid #ece9f6">
+      <span style="flex-shrink:0;font-size:10px;font-weight:800;color:#6d28d9;background:#ede9fe;border-radius:6px;padding:2px 8px;white-space:nowrap">SOP &sect;{{ t.clause }}</span>
+      <div style="font-size:11px;color:#334155;line-height:1.5"><b>{{ t.sop }}</b><br>{{ t.decision }} <span style="color:#0f766e">&middot; {{ t.citation }}</span></div>
+    </div>
+    {% endif %}{% endfor %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #ece9f6">
+      <a href="/sop-view" target="_blank" style="font-size:10px;font-weight:700;color:#6d28d9;background:#ede9fe;border:1px solid #ddd6fe;border-radius:7px;padding:6px 12px;text-decoration:none">&#x1F4D6; View the SOP</a>
+      <a href="/sop-doc" style="font-size:10px;font-weight:700;color:#1d4ed8;background:#dbeafe;border:1px solid #bfdbfe;border-radius:7px;padding:6px 12px;text-decoration:none">&#x1F4C4; SOP (Word document)</a>
+      <a href="/panel/sops" target="_blank" style="font-size:10px;font-weight:700;color:#0f766e;background:#ccfbf1;border:1px solid #99f6e4;border-radius:7px;padding:6px 12px;text-decoration:none">&#x1F9E9; The Agent&rsquo;s Rules &rarr;</a>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="nav-row">
     <button class="btn btn-prev" onclick="goStep(2)">&#x2190; Normalization</button>
     <button class="btn btn-next" onclick="goStep(4)">Gap Triage &#x2192;</button>

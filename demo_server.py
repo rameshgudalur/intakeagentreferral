@@ -712,37 +712,40 @@ def _sop_trace(fields, comp, data):
     tier = fields.get("confidence_tier") if isinstance(fields.get("confidence_tier"), dict) else {}
     trace = []
     for r in rules:
-        field = (r.get("field") or "").lower()
-        action = (r.get("action") or "").lower()
-        e = {"clause": r.get("clause", ""), "sop": r.get("sop", ""), "action": action, "citation": r.get("citation", "SOP policy")}
-        if field == "auth_ref" or (action == "block" and "auth" in (r.get("sop", "").lower())):
-            e["decision"] = ("Authorization reference MISSING → episode held; outreach to adjuster."
-                             if "auth_ref" in gaps else "Authorization reference on file — requirement satisfied.")
-            trace.append(e)
-        elif field == "icd_code" or action in ("resolve", "reject"):
+        rtype = str(r.get("type", "")).lower()
+        field = str(r.get("field", "")).lower()
+        action = str(r.get("action", "")).lower()
+        e = {"clause": r.get("clause", ""), "sop": r.get("sop", ""), "type": rtype,
+             "action": action, "citation": r.get("citation", "SOP policy")}
+        decision = None
+        # Dispatch on the rule's TYPED 'type' (the schema /api/ingest-sop emits); fall back to a
+        # field/action heuristic only for legacy untyped rules.
+        if rtype == "required_field" or (not rtype and field == "auth_ref"):
+            if field == "auth_ref":
+                decision = ("Authorization reference MISSING → episode held; outreach to adjuster."
+                            if "auth_ref" in gaps else "Authorization reference on file — requirement satisfied.")
+            elif field in gaps:
+                decision = "Required field '" + field + "' missing → flagged for collection."
+            elif field and fields.get(field) not in (None, "", []):
+                decision = "Required field '" + field + "' present — requirement satisfied."
+        elif rtype in ("coding_authority", "coding_rule") or (not rtype and (field == "icd_code" or action in ("resolve", "reject"))):
             if icd_conf:
-                e["decision"] = "Diagnosis codes disagreed → clinical/Rx code adopted: " + str(fields.get("icd_code", "—")) + "."
-                trace.append(e)
-        elif field == "jurisdiction" or action == "sla":
+                decision = "Diagnosis codes disagreed → clinical/Rx code adopted: " + str(fields.get("icd_code", "—")) + "."
+        elif rtype == "jurisdiction_sla" or (not rtype and (field == "jurisdiction" or action == "sla")):
             if juris.get("state"):
-                e["decision"] = str(juris.get("state")) + " → SLA " + str(juris.get("sla_days", "?")) + " business day(s)."
-                trace.append(e)
-        elif field == "confidence" or action == "tier":
+                decision = str(juris.get("state")) + " → SLA " + str(juris.get("sla_days", "?")) + " business day(s)."
+        elif rtype == "confidence_gate" or (not rtype and (field == "confidence" or action == "tier")):
             if tier.get("tier"):
-                e["decision"] = "Confidence " + str(fields.get("confidence", "?")) + "% → tier " + str(tier.get("tier")) + " (" + str(tier.get("autonomy", "")) + ")."
-                trace.append(e)
-        elif action == "flag":
+                decision = "Confidence " + str(fields.get("confidence", "?")) + "% → tier " + str(tier.get("tier")) + " (" + str(tier.get("autonomy", "")) + ")."
+        elif rtype == "coverage_check" or (not rtype and (field == "dme_item" or action in ("confirm", "flag"))):
             if fields.get("dme_item"):
-                e["decision"] = "Equipment spec/weight checked before dispatch — “" + str(fields.get("dme_item")) + "”."
-                trace.append(e)
-        elif field == "dme_item" or action == "confirm":
-            if fields.get("dme_item"):
-                e["decision"] = "DME “" + str(fields.get("dme_item")) + "” validated against covered conditions."
-                trace.append(e)
-        elif action == "escalate" or field == "escalate":
+                decision = "DME “" + str(fields.get("dme_item")) + "” checked against covered conditions / spec before dispatch."
+        elif rtype == "escalation" or (not rtype and (action == "escalate" or field == "escalate")):
             if fields.get("escalate"):
-                e["decision"] = "Below threshold / split evidence → routed to the human-review gate."
-                trace.append(e)
+                decision = "Below threshold / split evidence → routed to the human-review gate."
+        if decision:
+            e["decision"] = decision
+            trace.append(e)
     return trace
 
 
